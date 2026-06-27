@@ -1,0 +1,469 @@
+Analyze Mobile RAT Using MobSF
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Mobile Security Framework (MobSF) for Android malware analysis
+Perform static analysis of mobile RAT applications using MobSF
+Identify malicious permissions, components, and communication patterns in RAT samples
+Automate RAT detection using MobSF's REST API with Python
+Generate security assessment reports for mobile malware
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Android application structure (APK files, permissions, components)
+Familiarity with Linux command line operations
+Basic Python programming knowledge
+Understanding of REST APIs and JSON data formats
+Lab Environment
+Al Nafi provides pre-configured Linux-based cloud machines for this lab. Click Start Lab to access your dedicated environment with MobSF pre-installed and sample RAT APKs ready for analysis.
+
+Environment Details:
+
+MobSF server accessible at http://localhost:8000
+Sample RAT APKs located in /home/student/samples/
+Python 3.8+ with required libraries pre-installed
+Task 1: Configure MobSF and Upload RAT Sample
+Step 1.1: Verify MobSF Installation
+Check that MobSF is properly installed and configured:
+
+# Navigate to MobSF directory
+cd /opt/Mobile-Security-Framework-MobSF
+
+# Verify installation
+ls -la
+
+# Check Python dependencies
+pip3 list | grep -E "django|requests|lxml"
+Step 1.2: Start MobSF Server
+Launch the MobSF web interface:
+
+# Start MobSF server (runs on port 8000)
+cd /opt/Mobile-Security-Framework-MobSF
+python3 manage.py runserver 0.0.0.0:8000
+Note: Keep this terminal open. Open a new terminal for subsequent commands.
+
+Step 1.3: Access MobSF Web Interface
+Open Firefox browser and navigate to:
+
+http://localhost:8000
+You should see the MobSF dashboard with an upload interface.
+
+Step 1.4: Upload Sample RAT APK
+Locate the sample RAT APK:
+# List available samples
+ls -lh /home/student/samples/
+In the MobSF web interface:
+Click Upload & Analyze
+Select /home/student/samples/android-rat-sample.apk
+Click Analyze
+Wait 2-3 minutes for static analysis to complete
+Step 1.5: Review Analysis Dashboard
+Once analysis completes, examine these key sections:
+
+App Information: Package name, version, target SDK
+Security Score: Overall risk assessment
+Permissions: Requested permissions with risk levels
+Components: Activities, services, receivers, providers
+Code Analysis: Security issues and vulnerabilities
+Task 2: Analyze RAT Characteristics and Behavior
+Step 2.1: Examine Dangerous Permissions
+Review the permissions section and identify RAT-specific indicators:
+
+High-Risk Permissions for RATs:
+
+CAMERA - Remote surveillance capability
+RECORD_AUDIO - Audio monitoring
+ACCESS_FINE_LOCATION - Location tracking
+READ_SMS / SEND_SMS - SMS interception/sending
+CALL_PHONE - Phone call control
+READ_CONTACTS - Contact list exfiltration
+SYSTEM_ALERT_WINDOW - Overlay attacks
+DEVICE_ADMIN - Device control
+Task: Document which dangerous permissions are present in your sample.
+
+Step 2.2: Analyze Application Components
+Examine suspicious components that indicate RAT functionality:
+
+# Create analysis workspace
+mkdir -p ~/rat-analysis
+cd ~/rat-analysis
+
+# Create component analysis notes file
+nano component_analysis.txt
+Look for:
+
+Services with names containing: "remote", "control", "admin", "device"
+Receivers listening for: BOOT_COMPLETED, SMS_RECEIVED, PHONE_STATE
+Activities with admin or accessibility features
+Step 2.3: Review Network Security Issues
+In the MobSF report, navigate to Network Security section:
+
+Check for cleartext traffic allowances
+Identify hardcoded URLs or IP addresses
+Look for non-standard ports (not 80, 443, 8080)
+Note any suspicious domains or URL shorteners
+Step 2.4: Examine Code Analysis Findings
+Review the Code Analysis section for:
+
+Obfuscation techniques
+Dynamic code loading
+Reflection usage
+Native code execution
+Cryptographic operations
+Task: Create a summary of top 5 security issues found.
+
+Task 3: Automate RAT Detection with Python
+Step 3.1: Obtain MobSF API Key
+Generate an API key for programmatic access:
+
+# Get the API key from MobSF configuration
+cd /opt/Mobile-Security-Framework-MobSF
+grep "MOBSF_API_KEY" MobSF/settings.py
+
+# Or generate a new one
+python3 manage.py generate_api_key
+Save the API key for use in scripts.
+
+Step 3.2: Create RAT Detection Script Template
+Create a Python script to automate RAT analysis:
+
+#!/usr/bin/env python3
+"""
+MobSF RAT Detector - Automated analysis of Android RAT applications
+"""
+
+import requests
+import json
+import time
+import sys
+
+class MobSFRATDetector:
+    def __init__(self, base_url="http://localhost:8000", api_key=None):
+        """
+        Initialize the RAT detector with MobSF connection details.
+        
+        Args:
+            base_url: MobSF server URL
+            api_key: API key for authentication
+        """
+        self.base_url = base_url
+        self.headers = {"Authorization": api_key} if api_key else {}
+    
+    def upload_apk(self, apk_path):
+        """
+        Upload APK file to MobSF for analysis.
+        
+        Args:
+            apk_path: Path to the APK file
+            
+        Returns:
+            File hash if successful, None otherwise
+        """
+        # TODO: Implement file upload using requests.post()
+        # TODO: Handle the multipart/form-data upload
+        # TODO: Return the hash from the response
+        pass
+    
+    def get_analysis_results(self, file_hash):
+        """
+        Retrieve analysis results for a scanned APK.
+        
+        Args:
+            file_hash: Hash of the analyzed file
+            
+        Returns:
+            Dictionary containing analysis results
+        """
+        # TODO: Make GET request to /api/v1/report_json
+        # TODO: Pass file hash as parameter
+        # TODO: Return parsed JSON response
+        pass
+    
+    def calculate_rat_score(self, results):
+        """
+        Calculate RAT likelihood score based on analysis results.
+        
+        Args:
+            results: MobSF analysis results dictionary
+            
+        Returns:
+            Dictionary with score and risk assessment
+        """
+        rat_score = 0
+        findings = []
+        
+        # TODO: Check for dangerous permissions (2 points each)
+        # TODO: Identify suspicious services (3 points each)
+        # TODO: Check for boot receivers (2 points)
+        # TODO: Analyze network security issues (1 point each)
+        # TODO: Calculate total score and risk level
+        
+        # Risk levels: LOW (0-5), MEDIUM (6-10), HIGH (11-15), CRITICAL (16+)
+        
+        return {
+            'score': rat_score,
+            'risk_level': 'UNKNOWN',  # TODO: Calculate based on score
+            'findings': findings,
+            'is_likely_rat': rat_score >= 10
+        }
+    
+    def analyze_permissions(self, permissions):
+        """
+        Analyze permissions for RAT indicators.
+        
+        Args:
+            permissions: Dictionary of permissions from MobSF results
+            
+        Returns:
+            List of dangerous permissions found
+        """
+        # TODO: Define list of RAT-related permissions
+        # TODO: Check which permissions are present
+        # TODO: Return list of dangerous permissions with descriptions
+        pass
+    
+    def analyze_components(self, results):
+        """
+        Analyze app components for suspicious behavior.
+        
+        Args:
+            results: MobSF analysis results
+            
+        Returns:
+            Dictionary with suspicious components
+        """
+        # TODO: Extract services, receivers, activities
+        # TODO: Check for suspicious naming patterns
+        # TODO: Identify persistence mechanisms
+        pass
+    
+    def generate_report(self, apk_name, analysis):
+        """
+        Generate comprehensive RAT analysis report.
+        
+        Args:
+            apk_name: Name of the analyzed APK
+            analysis: Analysis results dictionary
+            
+        Returns:
+            Formatted report string
+        """
+        # TODO: Create formatted report with:
+        # - Summary section
+        # - Risk assessment
+        # - Detailed findings
+        # - Recommendations
+        pass
+
+def main():
+    """Main execution function"""
+    if len(sys.argv) < 3:
+        print("Usage: python3 rat_detector.py <apk_file> <api_key>")
+        sys.exit(1)
+    
+    apk_path = sys.argv[1]
+    api_key = sys.argv[2]
+    
+    # TODO: Initialize detector
+    # TODO: Upload APK
+    # TODO: Wait for analysis (10-15 seconds)
+    # TODO: Retrieve results
+    # TODO: Calculate RAT score
+    # TODO: Generate and display report
+    # TODO: Save report to file
+
+if __name__ == "__main__":
+    main()
+Save as ~/rat-analysis/rat_detector.py and make executable:
+
+chmod +x ~/rat-analysis/rat_detector.py
+Step 3.3: Create Network Analysis Module
+Create a module to extract network indicators:
+
+#!/usr/bin/env python3
+"""
+Network pattern analyzer for RAT detection
+"""
+
+import re
+import json
+
+def extract_network_indicators(source_code):
+    """
+    Extract URLs, IPs, and domains from decompiled source.
+    
+    Args:
+        source_code: String containing decompiled code
+        
+    Returns:
+        Dictionary with network indicators
+    """
+    # TODO: Define regex patterns for URLs, IPs, domains
+    # TODO: Search through source code
+    # TODO: Remove duplicates and filter false positives
+    # TODO: Return categorized indicators
+    pass
+
+def identify_cc_patterns(urls, ips):
+    """
+    Identify Command & Control communication patterns.
+    
+    Args:
+        urls: List of discovered URLs
+        ips: List of discovered IP addresses
+        
+    Returns:
+        List of C&C indicators
+    """
+    # TODO: Check for URL shorteners (bit.ly, tinyurl, etc.)
+    # TODO: Identify paste services (pastebin, hastebin)
+    # TODO: Check for non-standard ports
+    # TODO: Look for dynamic DNS services
+    pass
+
+def analyze_encryption(code_analysis):
+    """
+    Analyze cryptographic operations for C&C encryption.
+    
+    Args:
+        code_analysis: Code analysis results from MobSF
+        
+    Returns:
+        Dictionary with encryption findings
+    """
+    # TODO: Check for crypto library usage
+    # TODO: Identify encryption algorithms
+    # TODO: Look for key hardcoding
+    pass
+Step 3.4: Test the Detection System
+Run your RAT detector on the sample:
+
+cd ~/rat-analysis
+
+# Test with sample RAT
+python3 rat_detector.py /home/student/samples/android-rat-sample.apk YOUR_API_KEY
+
+# Expected output: RAT score, risk level, detailed findings
+Step 3.5: Create Batch Analysis Script
+Extend functionality for multiple APKs:
+
+#!/usr/bin/env python3
+"""
+Batch RAT analysis for multiple APK files
+"""
+
+import os
+import glob
+from rat_detector import MobSFRATDetector
+
+def batch_analyze(directory, api_key):
+    """
+    Analyze all APKs in a directory.
+    
+    Args:
+        directory: Path to directory containing APKs
+        api_key: MobSF API key
+        
+    Returns:
+        List of analysis results
+    """
+    # TODO: Find all APK files in directory
+    # TODO: Initialize detector
+    # TODO: Loop through APKs and analyze each
+    # TODO: Collect results
+    # TODO: Generate summary report
+    pass
+
+def generate_summary_report(results):
+    """
+    Generate summary report for batch analysis.
+    
+    Args:
+        results: List of individual analysis results
+        
+    Returns:
+        Formatted summary report
+    """
+    # TODO: Calculate statistics (total, RATs detected, risk distribution)
+    # TODO: Identify top threats
+    # TODO: Create summary table
+    pass
+
+# TODO: Implement main() function for batch processing
+Expected Outcomes
+After completing this lab, you should have:
+
+Functional MobSF Setup: Working MobSF installation capable of analyzing Android APKs
+RAT Analysis Skills: Ability to identify RAT characteristics through static analysis
+Automated Detection: Python scripts that automate RAT detection via MobSF API
+Analysis Reports: Comprehensive reports documenting RAT behavior and risk levels
+Key Indicators Identified:
+
+Dangerous permission combinations (camera + location + SMS)
+Persistence mechanisms (boot receivers, device admin)
+Network communication patterns (C&C servers, non-standard ports)
+Suspicious components (remote control services, accessibility abuse)
+Troubleshooting Tips
+Issue 1: MobSF Server Won't Start
+Symptoms: Error messages when running manage.py runserver
+
+Solutions:
+
+# Check if port 8000 is already in use
+sudo netstat -tulpn | grep 8000
+
+# Kill existing process if needed
+sudo kill -9 <PID>
+
+# Check Python dependencies
+pip3 install -r requirements.txt
+
+# Verify Java installation
+java -version
+Issue 2: API Authentication Fails
+Symptoms: 401 Unauthorized errors when using API
+
+Solutions:
+
+Verify API key is correct in script
+Check header format: {"Authorization": "your_api_key"}
+Ensure API key hasn't expired
+Try regenerating API key
+Issue 3: Analysis Takes Too Long
+Symptoms: APK analysis doesn't complete
+
+Solutions:
+
+Check APK file size (large files take longer)
+Verify sufficient disk space: df -h
+Monitor MobSF logs: tail -f logs/mobsf.log
+Restart MobSF server if hung
+Issue 4: Python Script Import Errors
+Symptoms: ModuleNotFoundError when running scripts
+
+Solutions:
+
+# Install missing modules
+pip3 install requests
+
+# Verify Python path
+echo $PYTHONPATH
+
+# Run with explicit Python 3
+python3 script.py
+Conclusion
+This lab provided hands-on experience with mobile malware analysis using MobSF. You learned to identify RAT characteristics through static analysis, including dangerous permissions, suspicious components, and network communication patterns. The automated detection scripts demonstrate how security teams can scale malware analysis operations.
+
+Key Takeaways:
+
+Static analysis reveals RAT capabilities without execution
+Permission combinations indicate malicious intent
+Automation enables efficient large-scale malware detection
+MobSF provides comprehensive Android security assessment
+Next Steps:
+
+Explore dynamic analysis with Android emulators
+Integrate RAT detection into CI/CD pipelines
+Study advanced obfuscation techniques
+Analyze real-world RAT samples from threat intelligence feeds
+Security Note: Always analyze malware in isolated environments. Never install suspicious APKs on production devices.

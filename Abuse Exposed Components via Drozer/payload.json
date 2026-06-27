@@ -1,0 +1,29 @@
+{
+  "activity_payloads": [
+    {
+      "name": "SQL Injection",
+      "extras": {
+        "query": "'; DROP TABLE users; --"
+      }
+    },
+    {
+      "name": "Path Traversal",
+      "data_uri": "file://../../etc/passwd"
+    },
+    {
+      "name": "XSS Payload",
+      "extras": {
+        "message": "<script>alert('XSS')</script>"
+      }
+    }
+  ],
+  "broadcast_payloads": [
+    {
+      "name": "Command Injection",
+      "action": "com.example.EXECUTE_COMMAND",
+      "extras": {
+        "command": "cat /etc/passwd"
+      }
+    }
+  ]
+}

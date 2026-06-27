@@ -1,0 +1,530 @@
+: Explore iOS Filesystem and Keychain Secrets
+Objectives
+By the end of this lab, students will be able to:
+
+Understand iOS filesystem structure and security mechanisms
+Set up simulated iOS environments for security testing on Linux
+Extract and analyze keychain data using custom Python tools
+Identify security vulnerabilities in iOS application data storage
+Generate comprehensive security assessment reports
+Prerequisites
+Basic Linux command line proficiency
+Fundamental Python programming skills
+Understanding of mobile application security concepts
+Familiarity with file permissions and directory structures
+Lab Environment
+This lab uses Al Nafi's pre-configured Linux cloud machines. Click Start Lab to access your environment with all necessary tools pre-installed. No additional setup required.
+
+Task 1: Create Simulated iOS Filesystem
+Step 1: Set Up Directory Structure
+Create a simulated iOS filesystem for security testing:
+
+# Create working directory
+mkdir -p ~/ios-security-lab
+cd ~/ios-security-lab
+
+# Create iOS filesystem structure
+mkdir -p ios-filesystem/{Applications,Library,System,var}
+mkdir -p ios-filesystem/Applications/TestApp.app
+mkdir -p ios-filesystem/Library/{Keychains,Preferences,Caches}
+mkdir -p ios-filesystem/var/{mobile,log}
+
+# Verify structure
+tree ios-filesystem/
+Step 2: Create Sample Application Files
+Generate sample iOS application data:
+
+# Create Info.plist
+cat > ios-filesystem/Applications/TestApp.app/Info.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.example.testapp</string>
+    <key>CFBundleName</key>
+    <string>TestApp</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+</dict>
+</plist>
+EOF
+Step 3: Create Sample Keychain Data
+Generate keychain files with various security levels:
+
+# Create primary keychain file
+cat > ios-filesystem/Library/Keychains/keychain-2.db << 'EOF'
+service: com.example.testapp
+account: user@example.com
+password: Test123
+access_group: com.example.testapp
+creation_date: 2024-01-15
+
+service: com.banking.secure
+account: john.doe@bank.com
+password: SecureBank@2024!
+access_group: com.banking.secure
+creation_date: 2024-02-01
+
+service: com.social.app
+account: socialuser
+password: password
+access_group: com.social.app
+creation_date: 2024-01-20
+EOF
+
+# Create additional keychain entries
+cat > ios-filesystem/Library/Keychains/keychain-3.db << 'EOF'
+service: com.enterprise.vpn
+account: employee@company.com
+password: VPN_P@ssw0rd_2024
+access_group: com.enterprise.vpn
+creation_date: 2024-02-10
+
+service: com.email.client
+account: user@email.com
+password: 123456
+access_group: com.email.client
+creation_date: 2024-01-05
+EOF
+Step 4: Install Required Tools
+# Update package manager
+sudo apt update
+
+# Install analysis tools
+sudo apt install -y python3 python3-pip sqlite3 tree
+
+# Install Python libraries
+pip3 install --user pycryptodome
+Task 2: Build Keychain Extraction Tool
+Step 1: Create Basic Keychain Dumper
+Create a Python script to extract keychain data. Students must complete the implementation:
+
+#!/usr/bin/env python3
+"""
+Keychain Dumper - Extract and analyze iOS keychain data
+Students: Complete the TODO sections
+"""
+
+import os
+import json
+from datetime import datetime
+from pathlib import Path
+
+class KeychainDumper:
+    def __init__(self, keychain_path):
+        self.keychain_path = keychain_path
+        self.results = []
+    
+    def find_keychain_files(self):
+        """
+        Find all keychain-related files in the target directory.
+        
+        Returns:
+            List of file paths containing keychain data
+        """
+        # TODO: Implement file discovery logic
+        # Hint: Look for .db, .keychain, and .plist files
+        # Use os.walk() or Path.rglob()
+        pass
+    
+    def extract_from_file(self, filepath):
+        """
+        Extract keychain entries from a single file.
+        
+        Args:
+            filepath: Path to keychain file
+        
+        Returns:
+            List of dictionaries containing keychain entries
+        """
+        # TODO: Read file content
+        # TODO: Parse keychain entry format (service:, account:, password:)
+        # TODO: Return structured data
+        pass
+    
+    def dump_keychain_data(self):
+        """
+        Main extraction method - orchestrates the dumping process.
+        
+        Returns:
+            List of all extracted keychain entries
+        """
+        # TODO: Call find_keychain_files()
+        # TODO: Process each file with extract_from_file()
+        # TODO: Store results in self.results
+        pass
+    
+    def generate_report(self, output_file):
+        """
+        Generate JSON report of extracted data.
+        
+        Args:
+            output_file: Path for output JSON file
+        """
+        # TODO: Create report structure with metadata
+        # TODO: Include extraction summary and findings
+        # TODO: Write to JSON file
+        pass
+
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) != 2:
+        print("Usage: python3 keychain_dumper.py <keychain_path>")
+        sys.exit(1)
+    
+    # TODO: Initialize KeychainDumper
+    # TODO: Execute dump_keychain_data()
+    # TODO: Generate report
+    # TODO: Display summary
+Save as keychain_dumper.py and make executable:
+
+chmod +x keychain_dumper.py
+Step 2: Test Basic Extraction
+Run your implementation:
+
+# Execute keychain extraction
+python3 keychain_dumper.py ios-filesystem/Library/Keychains/
+
+# View generated report
+cat keychain_report.json | python3 -m json.tool
+Step 3: Verify Output
+Expected output structure:
+
+{
+  "extraction_summary": {
+    "total_entries": 5,
+    "extraction_date": "2024-XX-XX",
+    "keychain_path": "ios-filesystem/Library/Keychains/"
+  },
+  "keychain_entries": [
+    {
+      "service": "com.example.testapp",
+      "account": "user@example.com",
+      "password": "Test123"
+    }
+  ]
+}
+Task 3: Implement Security Analysis
+Step 1: Create Advanced Analyzer
+Build a comprehensive security analyzer. Students complete the security checks:
+
+#!/usr/bin/env python3
+"""
+Advanced Keychain Security Analyzer
+Students: Implement security analysis functions
+"""
+
+import os
+import json
+import re
+from datetime import datetime
+from pathlib import Path
+
+class SecurityAnalyzer:
+    def __init__(self, target_path, output_dir="./results"):
+        self.target_path = target_path
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.findings = []
+        self.statistics = {
+            'total_files_scanned': 0,
+            'keychain_entries_found': 0,
+            'security_issues': 0
+        }
+    
+    def analyze_password_strength(self, password):
+        """
+        Analyze password strength and identify weaknesses.
+        
+        Args:
+            password: Password string to analyze
+        
+        Returns:
+            Dictionary with risk_level and issues list
+        """
+        # TODO: Check password length (minimum 8 characters)
+        # TODO: Check for uppercase, lowercase, numbers, special chars
+        # TODO: Check against common weak passwords
+        # TODO: Return analysis with risk_level: 'high', 'medium', or 'low'
+        pass
+    
+    def scan_keychain_files(self):
+        """
+        Scan directory for keychain files and extract entries.
+        """
+        # TODO: Find all keychain files
+        # TODO: Extract entries from each file
+        # TODO: Analyze each entry with analyze_password_strength()
+        # TODO: Store findings with security analysis
+        pass
+    
+    def scan_plist_files(self):
+        """
+        Scan plist files for embedded secrets.
+        """
+        # TODO: Find all .plist files
+        # TODO: Search for password/token/key patterns using regex
+        # TODO: Extract and analyze found secrets
+        pass
+    
+    def generate_executive_summary(self):
+        """
+        Create executive summary of security findings.
+        
+        Returns:
+            Dictionary with summary statistics
+        """
+        # TODO: Count high/medium/low risk issues
+        # TODO: Calculate overall risk rating
+        # TODO: Return summary dictionary
+        pass
+    
+    def generate_recommendations(self):
+        """
+        Generate security recommendations based on findings.
+        
+        Returns:
+            List of recommendation categories with specific actions
+        """
+        # TODO: Create recommendations for password security
+        # TODO: Add keychain security best practices
+        # TODO: Include application security guidelines
+        pass
+    
+    def generate_html_report(self, report_data, output_path):
+        """
+        Generate HTML report for visualization.
+        
+        Args:
+            report_data: Dictionary containing all findings
+            output_path: Path for HTML output file
+        """
+        # TODO: Create HTML structure with CSS styling
+        # TODO: Add executive summary section
+        # TODO: Display findings with risk-based color coding
+        # TODO: Include recommendations section
+        pass
+    
+    def run_analysis(self):
+        """
+        Execute complete security analysis workflow.
+        """
+        # TODO: Run all scan methods
+        # TODO: Generate executive summary
+        # TODO: Create recommendations
+        # TODO: Generate both JSON and HTML reports
+        pass
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='iOS Keychain Security Analyzer')
+    parser.add_argument('target_path', help='Path to iOS filesystem')
+    parser.add_argument('-o', '--output', default='./results', help='Output directory')
+    
+    args = parser.parse_args()
+    
+    # TODO: Initialize SecurityAnalyzer
+    # TODO: Run analysis
+    # TODO: Display summary statistics
+Save as security_analyzer.py:
+
+chmod +x security_analyzer.py
+Step 2: Execute Security Analysis
+Run the analyzer on your simulated filesystem:
+
+# Create results directory
+mkdir -p results
+
+# Run security analysis
+python3 security_analyzer.py ios-filesystem/ -o results/
+
+# View results
+ls -la results/
+cat results/comprehensive_report.json | python3 -m json.tool
+Step 3: Review HTML Report
+Open the HTML report in a browser:
+
+# If using a GUI environment
+firefox results/security_report.html
+
+# Or view the HTML source
+cat results/security_report.html
+Task 4: Automated Batch Analysis
+Step 1: Create Batch Processing Script
+Build a script to analyze multiple applications. Students implement the batch logic:
+
+#!/usr/bin/env python3
+"""
+Batch Keychain Analyzer - Process multiple iOS applications
+Students: Complete batch processing implementation
+"""
+
+import os
+import json
+from pathlib import Path
+from datetime import datetime
+
+class BatchAnalyzer:
+    def __init__(self, apps_directory, output_dir="./batch_results"):
+        self.apps_directory = Path(apps_directory)
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.app_results = []
+    
+    def find_applications(self):
+        """
+        Find all iOS application directories.
+        
+        Returns:
+            List of application directory paths
+        """
+        # TODO: Search for .app directories
+        # TODO: Return list of Path objects
+        pass
+    
+    def analyze_single_app(self, app_path):
+        """
+        Analyze a single iOS application.
+        
+        Args:
+            app_path: Path to .app directory
+        
+        Returns:
+            Dictionary with analysis results
+        """
+        # TODO: Extract bundle identifier from Info.plist
+        # TODO: Find and analyze keychain files
+        # TODO: Scan for sensitive data in app directory
+        # TODO: Return structured results
+        pass
+    
+    def process_all_apps(self):
+        """
+        Process all applications in batch.
+        """
+        # TODO: Get list of applications
+        # TODO: Analyze each application
+        # TODO: Store results
+        # TODO: Generate summary statistics
+        pass
+    
+    def generate_comparison_report(self):
+        """
+        Generate comparative analysis report.
+        
+        Returns:
+            Dictionary with comparative statistics
+        """
+        # TODO: Compare security postures across apps
+        # TODO: Identify common vulnerabilities
+        # TODO: Rank applications by risk level
+        pass
+    
+    def export_results(self):
+        """
+        Export batch analysis results.
+        """
+        # TODO: Create JSON report with all app results
+        # TODO: Generate CSV summary for spreadsheet analysis
+        # TODO: Create HTML dashboard
+        pass
+
+if __name__ == "__main__":
+    # TODO: Initialize BatchAnalyzer
+    # TODO: Process all applications
+    # TODO: Generate reports
+    # TODO: Display summary
+Step 2: Create Multiple Test Applications
+Set up additional test applications:
+
+# Create second test app
+mkdir -p ios-filesystem/Applications/SecureApp.app
+cat > ios-filesystem/Applications/SecureApp.app/Info.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.secure.app</string>
+    <key>CFBundleName</key>
+    <string>SecureApp</string>
+</dict>
+</plist>
+EOF
+
+# Create third test app
+mkdir -p ios-filesystem/Applications/WeakApp.app
+cat > ios-filesystem/Applications/WeakApp.app/Info.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.weak.app</string>
+    <key>CFBundleName</key>
+    <string>WeakApp</string>
+</dict>
+</plist>
+EOF
+Step 3: Execute Batch Analysis
+Run batch processing:
+
+# Execute batch analyzer
+python3 batch_analyzer.py ios-filesystem/Applications/ -o batch_results/
+
+# Review batch results
+cat batch_results/batch_summary.json | python3 -m json.tool
+Expected Outcomes
+Upon completing this lab, students should have:
+
+Functional keychain extraction tool that discovers and parses iOS keychain files
+Security analysis implementation that identifies password weaknesses and security issues
+Comprehensive reporting system generating both JSON and HTML outputs
+Batch processing capability for analyzing multiple applications simultaneously
+Understanding of iOS security including keychain structure, data protection, and common vulnerabilities
+Troubleshooting Tips
+Issue: Permission Denied Errors
+# Fix file permissions
+chmod +x *.py
+chmod -R u+rw ios-filesystem/
+Issue: Module Import Errors
+# Reinstall Python dependencies
+pip3 install --user --upgrade pycryptodome
+
+# Verify installation
+python3 -c "import Crypto; print('Success')"
+Issue: Empty Extraction Results
+Verify keychain files exist: ls -la ios-filesystem/Library/Keychains/
+Check file format matches expected structure
+Ensure file reading logic handles encoding properly
+Add debug print statements to trace execution
+Issue: JSON Formatting Errors
+# Validate JSON output
+python3 -m json.tool keychain_report.json
+
+# Pretty print for debugging
+cat keychain_report.json | python3 -m json.tool > formatted.json
+Conclusion
+This lab provided hands-on experience with iOS filesystem security analysis and keychain extraction techniques. Students learned to:
+
+Navigate and understand iOS filesystem structure
+Build custom security analysis tools in Python
+Extract and analyze sensitive data from keychain storage
+Identify common security vulnerabilities in mobile applications
+Generate professional security assessment reports
+Key Takeaways:
+
+iOS keychain provides secure storage but requires proper implementation
+Weak passwords remain a critical vulnerability even with secure storage
+Automated analysis tools are essential for comprehensive security assessments
+Security reporting must balance technical detail with actionable recommendations
+Next Steps:
+
+Extend analysis to include encrypted keychain databases
+Implement real-time monitoring capabilities
+Integrate with CI/CD pipelines for continuous security testing
+Explore advanced iOS security features like Secure Enclave
+Security Reminder: These techniques are for authorized security testing only. Always obtain proper authorization before analyzing any iOS application or device.

@@ -1,0 +1,17 @@
+service: com.example.testapp
+account: user@example.com
+password: Test123
+access_group: com.example.testapp
+creation_date: 2024-01-15
+
+service: com.banking.secure
+account: john.doe@bank.com
+password: SecureBank@2024!
+access_group: com.banking.secure
+creation_date: 2024-02-01
+
+service: com.social.app
+account: socialuser
+password: password
+access_group: com.social.app
+creation_date: 2024-01-20

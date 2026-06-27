@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>APIKey</key>
+    <string>sk_live_abc123def456ghi789</string>
+    <key>UserCredentials</key>
+    <dict>
+        <key>username</key>
+        <string>john.doe@example.com</string>
+        <key>password</key>
+        <string>MySecretPassword123</string>
+        <key>token</key>
+        <string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</string>
+    </dict>
+    <key>ServerURL</key>
+    <string>https://api.example.com/v1</string>
+    <key>DebugMode</key>
+    <true/>
+    <key>LastLoginDate</key>
+    <date>2024-01-15T10:30:00Z</date>
+</dict>
+</plist>

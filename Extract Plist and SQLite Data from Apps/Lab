@@ -1,0 +1,490 @@
+ Extract Plist and SQLite Data from Mobile Apps
+Objectives
+By the end of this lab, students will be able to:
+
+Extract and analyze plist (Property List) files from mobile applications
+Query SQLite databases to extract application data
+Identify sensitive information in configuration files and databases
+Automate data extraction using Python scripts
+Generate security analysis reports for mobile app data storage
+Prerequisites
+Students should have:
+
+Basic Linux command-line knowledge
+Fundamental Python programming skills
+Understanding of SQL query syntax
+Familiarity with file systems and data formats
+Lab Environment
+Your cloud machine includes:
+
+sqlite3 - Database query tool
+Python 3 with plistlib module
+Sample mobile application data files
+Pre-configured working directory
+Access your environment by clicking Start Lab.
+
+Task 1: Analyze SQLite Databases
+Step 1.1: Setup Working Environment
+Create your analysis workspace:
+
+# Create directory structure
+mkdir -p ~/mobile_analysis/sample_app/{Documents,Library/Preferences}
+cd ~/mobile_analysis
+
+# Verify tools
+sqlite3 --version
+python3 --version
+Step 1.2: Create Sample Database
+Generate a sample mobile app database:
+
+# Create sample SQLite database
+sqlite3 sample_app/Documents/userdata.db << 'EOF'
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    api_token TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO users VALUES 
+(1, 'john_doe', 'john@example.com', 'sha256:abc123', 'token_abc123', '2024-01-01 10:00:00'),
+(2, 'jane_smith', 'jane@example.com', 'sha256:def456', 'token_def456', '2024-01-02 11:00:00');
+
+CREATE TABLE app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+INSERT INTO app_settings VALUES 
+('encryption_key', 'AES256:secretkey123456'),
+('api_endpoint', 'https://api.example.com/v1'),
+('analytics_id', 'GA-123456789');
+
+CREATE TABLE messages (
+    id INTEGER PRIMARY KEY,
+    sender_id INTEGER,
+    recipient_id INTEGER,
+    content TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO messages VALUES 
+(1, 1, 2, 'Can you send the API credentials?', '2024-01-15 09:30:00'),
+(2, 2, 1, 'The key is sk_live_xyz789', '2024-01-15 09:35:00');
+EOF
+Step 1.3: Extract Database Information
+Explore the database structure:
+
+# List all tables
+sqlite3 sample_app/Documents/userdata.db ".tables"
+
+# View schema
+sqlite3 sample_app/Documents/userdata.db ".schema"
+
+# Extract user data
+sqlite3 sample_app/Documents/userdata.db "SELECT * FROM users;"
+
+# Extract settings
+sqlite3 sample_app/Documents/userdata.db "SELECT * FROM app_settings;"
+
+# Export to CSV
+sqlite3 -header -csv sample_app/Documents/userdata.db "SELECT * FROM users;" > users_export.csv
+sqlite3 -header -csv sample_app/Documents/userdata.db "SELECT * FROM app_settings;" > settings_export.csv
+Step 1.4: Identify Sensitive Data
+Search for sensitive information:
+
+# Find potential API keys in settings
+sqlite3 sample_app/Documents/userdata.db "SELECT * FROM app_settings WHERE key LIKE '%key%' OR key LIKE '%token%';"
+
+# Find messages containing sensitive keywords
+sqlite3 sample_app/Documents/userdata.db "SELECT * FROM messages WHERE content LIKE '%key%' OR content LIKE '%password%' OR content LIKE '%token%';"
+
+# Count records per table
+sqlite3 sample_app/Documents/userdata.db "SELECT 'users' as table_name, COUNT(*) as count FROM users UNION SELECT 'messages', COUNT(*) FROM messages UNION SELECT 'app_settings', COUNT(*) FROM app_settings;"
+Task 2: Parse Plist Files
+Step 2.1: Create Sample Plist File
+Generate a sample configuration file:
+
+cat > sample_app/Library/Preferences/com.example.app.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>APIKey</key>
+    <string>sk_live_abc123def456ghi789</string>
+    <key>UserCredentials</key>
+    <dict>
+        <key>username</key>
+        <string>john.doe@example.com</string>
+        <key>password</key>
+        <string>MySecretPassword123</string>
+        <key>token</key>
+        <string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</string>
+    </dict>
+    <key>ServerURL</key>
+    <string>https://api.example.com/v1</string>
+    <key>DebugMode</key>
+    <true/>
+    <key>LastLoginDate</key>
+    <date>2024-01-15T10:30:00Z</date>
+</dict>
+</plist>
+EOF
+Step 2.2: Create Plist Parser Script
+Create a Python script to analyze plist files:
+
+#!/usr/bin/env python3
+"""
+Plist Analyzer - Identifies sensitive data in plist files
+Students: Complete the TODO sections to implement full functionality
+"""
+
+import plistlib
+import re
+import json
+from pathlib import Path
+
+def parse_plist_file(file_path):
+    """
+    Parse a plist file and return its contents.
+    
+    Args:
+        file_path: Path to the plist file
+    
+    Returns:
+        Dictionary containing plist data or None on error
+    """
+    # TODO: Open and parse the plist file using plistlib
+    # TODO: Handle exceptions and return None on error
+    # TODO: Return the parsed data
+    pass
+
+def identify_sensitive_keys(data, path="root"):
+    """
+    Recursively search for sensitive information in plist data.
+    
+    Args:
+        data: Plist data (dict, list, or primitive)
+        path: Current path in the data structure
+    
+    Returns:
+        List of findings with type, path, key, value, and risk_level
+    """
+    sensitive_patterns = {
+        'api_key': r'(?i)(api[_-]?key|apikey)',
+        'password': r'(?i)(password|passwd|pwd)',
+        'token': r'(?i)(token|auth|bearer)',
+        'secret': r'(?i)(secret|private)',
+        'credential': r'(?i)(credential|cred)',
+        'email': r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    }
+    
+    findings = []
+    
+    # TODO: Implement recursive search through dictionary
+    # TODO: Check keys against sensitive_patterns
+    # TODO: Check string values against patterns
+    # TODO: Assign risk levels (HIGH for password/secret/api_key, MEDIUM for others)
+    # TODO: Handle nested dictionaries and lists
+    # TODO: Append findings with proper structure
+    
+    return findings
+
+def generate_report(plist_data, findings, output_file):
+    """
+    Generate JSON report of analysis results.
+    
+    Args:
+        plist_data: Original plist data
+        findings: List of sensitive data findings
+        output_file: Path to output JSON file
+    
+    Returns:
+        Dictionary containing the complete report
+    """
+    # TODO: Create report structure with timestamp
+    # TODO: Calculate risk summary (count HIGH, MEDIUM, LOW)
+    # TODO: Include findings and raw data
+    # TODO: Write to JSON file with proper formatting
+    # TODO: Return the report dictionary
+    pass
+
+def main():
+    """Main execution function"""
+    plist_file = 'sample_app/Library/Preferences/com.example.app.plist'
+    
+    print("=== Plist Analysis Tool ===")
+    
+    # TODO: Parse the plist file
+    # TODO: Identify sensitive information
+    # TODO: Display findings organized by risk level
+    # TODO: Generate and save report
+    # TODO: Print summary statistics
+    # TODO: Display security recommendations if HIGH risk found
+    
+    pass
+
+if __name__ == "__main__":
+    main()
+Save and test your script:
+
+# Save the script
+nano plist_analyzer.py
+# (Paste the code above)
+
+# Make executable
+chmod +x plist_analyzer.py
+
+# Run the analyzer
+python3 plist_analyzer.py
+Step 2.3: Manual Plist Inspection
+View plist content directly:
+
+# Display raw content
+cat sample_app/Library/Preferences/com.example.app.plist
+
+# Use Python to pretty-print
+python3 << 'EOF'
+import plistlib
+with open('sample_app/Library/Preferences/com.example.app.plist', 'rb') as f:
+    data = plistlib.load(f)
+    print("Keys found:", list(data.keys()))
+    for key, value in data.items():
+        print(f"{key}: {value}")
+EOF
+Task 3: Automate Analysis with Python
+Step 3.1: Create Comprehensive Analyzer
+Build an automated analysis tool:
+
+#!/usr/bin/env python3
+"""
+Mobile App Analyzer - Automated extraction and analysis
+Students: Implement the TODO sections to complete functionality
+"""
+
+import os
+import sqlite3
+import plistlib
+import json
+from datetime import datetime
+from pathlib import Path
+
+class MobileAppAnalyzer:
+    """Automated analyzer for mobile app data"""
+    
+    def __init__(self, app_path):
+        """
+        Initialize analyzer with app directory path.
+        
+        Args:
+            app_path: Path to mobile app directory
+        """
+        self.app_path = Path(app_path)
+        self.results = {
+            'timestamp': datetime.now().isoformat(),
+            'app_path': str(app_path),
+            'plist_files': [],
+            'sqlite_files': [],
+            'findings': []
+        }
+    
+    def find_files(self, extensions):
+        """
+        Find all files with specified extensions.
+        
+        Args:
+            extensions: List of file extensions to search for
+        
+        Returns:
+            List of file paths
+        """
+        # TODO: Walk through app_path directory
+        # TODO: Find files matching extensions
+        # TODO: Return list of full file paths
+        pass
+    
+    def analyze_sqlite(self, db_path):
+        """
+        Analyze SQLite database file.
+        
+        Args:
+            db_path: Path to SQLite database
+        
+        Returns:
+            Dictionary with tables, columns, and sample data
+        """
+        # TODO: Connect to database
+        # TODO: Get list of tables
+        # TODO: For each table, get schema and sample rows
+        # TODO: Identify sensitive column names
+        # TODO: Return structured analysis
+        pass
+    
+    def analyze_plist(self, plist_path):
+        """
+        Analyze plist file for sensitive data.
+        
+        Args:
+            plist_path: Path to plist file
+        
+        Returns:
+            Dictionary with findings and risk assessment
+        """
+        # TODO: Parse plist file
+        # TODO: Search for sensitive patterns
+        # TODO: Calculate risk scores
+        # TODO: Return analysis results
+        pass
+    
+    def run_full_analysis(self):
+        """
+        Execute complete analysis of app directory.
+        
+        Returns:
+            Complete results dictionary
+        """
+        # TODO: Find all plist files and analyze each
+        # TODO: Find all SQLite files and analyze each
+        # TODO: Aggregate findings
+        # TODO: Generate summary statistics
+        # TODO: Return complete results
+        pass
+    
+    def export_report(self, output_file):
+        """
+        Export analysis results to JSON file.
+        
+        Args:
+            output_file: Path to output file
+        """
+        # TODO: Write results to JSON with proper formatting
+        # TODO: Include timestamp and metadata
+        pass
+
+def main():
+    """Main execution"""
+    # TODO: Initialize analyzer with sample_app path
+    # TODO: Run full analysis
+    # TODO: Display summary to console
+    # TODO: Export detailed report to JSON
+    # TODO: Print recommendations based on findings
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3.2: Create Data Extraction Helper
+Build utility functions:
+
+#!/usr/bin/env python3
+"""
+Data Extraction Utilities
+Students: Complete these helper functions
+"""
+
+def extract_sqlite_to_csv(db_path, output_dir):
+    """
+    Export all tables from SQLite database to CSV files.
+    
+    Args:
+        db_path: Path to SQLite database
+        output_dir: Directory for CSV output files
+    """
+    # TODO: Connect to database
+    # TODO: Get list of tables
+    # TODO: For each table, export to CSV
+    # TODO: Use proper CSV formatting with headers
+    pass
+
+def search_sensitive_patterns(text):
+    """
+    Search text for sensitive data patterns.
+    
+    Args:
+        text: String to search
+    
+    Returns:
+        List of pattern matches with types
+    """
+    patterns = {
+        'email': r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',
+        'api_key': r'(sk|pk)_[a-z]+_[a-zA-Z0-9]{20,}',
+        'jwt': r'eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+',
+        'ip_address': r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
+    }
+    
+    # TODO: Search text for each pattern
+    # TODO: Return list of matches with pattern type
+    pass
+
+def generate_html_report(results, output_file):
+    """
+    Generate HTML report from analysis results.
+    
+    Args:
+        results: Analysis results dictionary
+        output_file: Path to HTML output file
+    """
+    # TODO: Create HTML structure
+    # TODO: Add summary section with statistics
+    # TODO: Add findings table with risk levels
+    # TODO: Use color coding for risk levels
+    # TODO: Write to output file
+    pass
+Step 3.3: Run Complete Analysis
+Execute your automated analysis:
+
+# Run the complete analyzer
+python3 mobile_analyzer.py
+
+# View generated reports
+ls -lh *.json *.csv
+
+# Display summary
+python3 << 'EOF'
+import json
+with open('analysis_report.json', 'r') as f:
+    report = json.load(f)
+    print(f"Analysis completed: {report['timestamp']}")
+    print(f"Files analyzed: {len(report['plist_files']) + len(report['sqlite_files'])}")
+    print(f"Total findings: {len(report['findings'])}")
+EOF
+Expected Outcomes
+After completing this lab, you should have:
+
+Extracted data from SQLite databases using command-line tools
+Parsed plist files to identify configuration data
+Identified sensitive information including API keys, passwords, and tokens
+Created Python scripts for automated analysis
+Generated comprehensive security reports
+Understanding of mobile app data storage vulnerabilities
+Troubleshooting Tips
+Issue: Cannot parse plist file
+
+Solution: Verify file format with file command; ensure it's valid XML or binary plist
+Issue: SQLite database locked
+
+Solution: Close any open connections; use .timeout command in sqlite3
+Issue: Python script fails with import errors
+
+Solution: Verify Python 3 is used; plistlib is built-in, no installation needed
+Issue: No sensitive data found
+
+Solution: Check pattern matching logic; verify data exists in source files
+Conclusion
+This lab demonstrated practical techniques for extracting and analyzing mobile application data. You learned to:
+
+Query SQLite databases for application data
+Parse plist configuration files
+Identify sensitive information using pattern matching
+Automate analysis with Python scripts
+Generate security assessment reports
+These skills are essential for mobile application security testing and identifying data storage vulnerabilities. Always ensure you have proper authorization before analyzing application data in real-world scenarios.
+
+Key Takeaways:
+
+Mobile apps often store sensitive data in plain text
+Plist files and SQLite databases are common storage mechanisms
+Automated analysis improves efficiency and coverage
+Proper data protection requires encryption and secure storage APIs

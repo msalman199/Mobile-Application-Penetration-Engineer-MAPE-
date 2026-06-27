@@ -1,0 +1,420 @@
+Reverse Malicious APK to Extract C2 Address
+Objectives
+By the end of this lab, students will be able to:
+
+Decompile Android APK files using JADX
+Extract and analyze strings from DEX files
+Identify Command and Control (C2) server addresses in malicious code
+Decode obfuscated strings using common techniques
+Create automated analysis scripts for APK investigation
+Document findings in a professional security report
+Prerequisites
+Basic understanding of Android application structure
+Familiarity with Java programming
+Linux command-line proficiency
+Basic Python scripting knowledge
+Understanding of network protocols
+Lab Environment
+Al Nafi Cloud Machine: Click Start Lab to access your pre-configured Ubuntu 20.04 environment with:
+
+JADX decompiler
+Python 3.8+ with analysis libraries
+Sample malicious APK files
+Standard Linux utilities
+Task 1: Environment Setup and Initial Analysis
+Step 1: Verify Tools and Create Workspace
+# Verify JADX installation
+jadx --version
+
+# Create working directory
+mkdir -p ~/apk_analysis/lab10
+cd ~/apk_analysis/lab10
+
+# Copy sample APK
+cp /home/student/samples/malicious_sample.apk ./
+Step 2: Perform Basic APK Inspection
+# Check file type
+file malicious_sample.apk
+
+# Calculate hash for documentation
+sha256sum malicious_sample.apk > apk_hash.txt
+
+# Extract APK contents
+unzip -l malicious_sample.apk | head -20
+Step 3: Decompile APK with JADX
+# Decompile to readable Java source
+jadx -d jadx_output malicious_sample.apk
+
+# Examine directory structure
+tree jadx_output -L 2
+
+# View AndroidManifest.xml
+cat jadx_output/resources/AndroidManifest.xml
+Task 2: String Extraction and Analysis
+Step 1: Extract DEX Files and Strings
+# Extract DEX files
+unzip -j malicious_sample.apk "*.dex" -d dex_files/
+
+# Extract all strings
+strings dex_files/classes.dex > all_strings.txt
+
+# Count total strings
+wc -l all_strings.txt
+Step 2: Search for Network Indicators
+# Find HTTP/HTTPS URLs
+grep -E "https?://" all_strings.txt > potential_urls.txt
+
+# Find IP addresses
+grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" all_strings.txt > potential_ips.txt
+
+# Find domain names
+grep -E "[a-zA-Z0-9-]+\.(com|net|org|tk|ml|cc)" all_strings.txt > potential_domains.txt
+
+# Display findings
+echo "=== Potential C2 Indicators ==="
+cat potential_urls.txt potential_ips.txt potential_domains.txt | sort -u
+Step 3: Analyze Android Manifest
+# Extract network permissions
+grep -i "permission" jadx_output/resources/AndroidManifest.xml | grep -E "(INTERNET|NETWORK)"
+
+# Find services and receivers
+grep -E "(service|receiver)" jadx_output/resources/AndroidManifest.xml
+Task 3: Code Analysis for C2 Communication
+Step 1: Search Decompiled Source Code
+cd jadx_output/sources/
+
+# Find network-related classes
+find . -name "*.java" -exec grep -l "HttpURLConnection\|Socket\|URL" {} \; > network_classes.txt
+
+# Display first 5 files
+head -5 network_classes.txt
+Step 2: Examine Network Communication Code
+# Search for URL construction
+grep -r "new URL\|URL(" . --include="*.java" | head -10
+
+# Look for socket connections
+grep -r "Socket\|connect(" . --include="*.java" | head -10
+
+# Find string concatenation (dynamic C2 construction)
+grep -r "StringBuilder\|StringBuffer" . --include="*.java" | grep -i "http"
+Step 3: Identify Configuration Classes
+# Find config-related files
+find . -name "*[Cc]onfig*.java" -o -name "*[Ss]etting*.java"
+
+# Search for hardcoded strings
+grep -r "final.*String.*=" . --include="*.java" | grep -E "(http|[0-9]{1,3}\.[0-9]{1,3})"
+Task 4: Decode Obfuscated Strings
+Step 1: Create String Decoder Script
+#!/usr/bin/env python3
+"""
+String decoder for obfuscated C2 addresses
+Students: Complete the decoding functions
+"""
+
+import base64
+import binascii
+import re
+
+def decode_base64(encoded_str: str) -> str:
+    """
+    Decode Base64 encoded string
+    
+    Args:
+        encoded_str: Base64 encoded string
+    
+    Returns:
+        Decoded string or None if decoding fails
+    """
+    # TODO: Implement Base64 decoding with error handling
+    # TODO: Return decoded string or None
+    pass
+
+def decode_hex(hex_str: str) -> str:
+    """
+    Decode hexadecimal encoded string
+    
+    Args:
+        hex_str: Hex encoded string
+    
+    Returns:
+        Decoded string or None if decoding fails
+    """
+    # TODO: Implement hex decoding
+    # TODO: Handle decoding errors
+    pass
+
+def rot13_decode(text: str) -> str:
+    """
+    Decode ROT13 cipher (Caesar cipher with shift 13)
+    
+    Args:
+        text: ROT13 encoded text
+    
+    Returns:
+        Decoded text
+    """
+    # TODO: Implement ROT13 decoding
+    # TODO: Handle both uppercase and lowercase
+    pass
+
+def is_potential_c2(text: str) -> bool:
+    """
+    Check if decoded text contains C2 indicators
+    
+    Args:
+        text: Decoded text to check
+    
+    Returns:
+        True if text contains C2 indicators
+    """
+    # TODO: Define C2 indicator patterns (URLs, IPs, domains)
+    # TODO: Check text against patterns
+    pass
+
+def analyze_strings(input_file: str):
+    """
+    Analyze strings file for encoded C2 addresses
+    
+    Args:
+        input_file: Path to strings file
+    """
+    # TODO: Read strings from file
+    # TODO: Attempt decoding with each method
+    # TODO: Print potential C2 addresses found
+    pass
+
+if __name__ == "__main__":
+    analyze_strings("all_strings.txt")
+Step 2: Run Decoder on Extracted Strings
+# Save the script
+nano string_decoder.py
+
+# Make executable
+chmod +x string_decoder.py
+
+# Run decoder
+python3 string_decoder.py > decoded_results.txt
+
+# Review results
+cat decoded_results.txt
+Task 5: Automated APK Analysis
+Step 1: Create APK Analyzer Class
+#!/usr/bin/env python3
+"""
+Automated APK C2 Extractor
+Students: Complete the analysis methods
+"""
+
+import os
+import re
+import subprocess
+import zipfile
+import json
+
+class APKAnalyzer:
+    def __init__(self, apk_path: str):
+        self.apk_path = apk_path
+        self.output_dir = "automated_analysis"
+        self.results = {
+            "c2_addresses": [],
+            "network_permissions": [],
+            "suspicious_classes": []
+        }
+    
+    def setup_environment(self):
+        """Create analysis directories"""
+        # TODO: Create output directories
+        pass
+    
+    def decompile_apk(self) -> bool:
+        """
+        Decompile APK using JADX
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        # TODO: Run JADX decompilation
+        # TODO: Check for errors
+        # TODO: Return success status
+        pass
+    
+    def extract_strings(self) -> list:
+        """
+        Extract strings from DEX files
+        
+        Returns:
+            List of extracted strings
+        """
+        # TODO: Extract DEX files from APK
+        # TODO: Run strings command on each DEX
+        # TODO: Return combined string list
+        pass
+    
+    def find_c2_addresses(self, strings: list) -> list:
+        """
+        Extract potential C2 addresses from strings
+        
+        Args:
+            strings: List of strings to analyze
+        
+        Returns:
+            List of potential C2 addresses
+        """
+        # TODO: Define regex patterns for URLs, IPs, domains
+        # TODO: Search strings for matches
+        # TODO: Return unique addresses
+        pass
+    
+    def analyze_permissions(self) -> list:
+        """
+        Extract network permissions from manifest
+        
+        Returns:
+            List of network-related permissions
+        """
+        # TODO: Parse AndroidManifest.xml
+        # TODO: Extract network permissions
+        # TODO: Return permission list
+        pass
+    
+    def generate_report(self):
+        """Generate JSON and text reports"""
+        # TODO: Create JSON report with all findings
+        # TODO: Create human-readable text report
+        # TODO: Save reports to output directory
+        pass
+    
+    def run_analysis(self):
+        """Execute complete analysis pipeline"""
+        # TODO: Call each analysis method in sequence
+        # TODO: Handle errors appropriately
+        # TODO: Generate final report
+        pass
+
+# Main execution
+if __name__ == "__main__":
+    analyzer = APKAnalyzer("malicious_sample.apk")
+    analyzer.run_analysis()
+Step 2: Execute Automated Analysis
+# Save and run the analyzer
+python3 apk_analyzer.py
+
+# Review generated reports
+cat automated_analysis/analysis_report.txt
+cat automated_analysis/analysis_report.json
+Task 6: Documentation and Reporting
+Step 1: Create Analysis Report Template
+cat > analysis_report.md << 'EOF'
+# APK C2 Analysis Report
+
+## Executive Summary
+[Brief overview of findings]
+
+## APK Information
+- **File Name**: malicious_sample.apk
+- **SHA256**: [Insert hash]
+- **Analysis Date**: [Insert date]
+
+## Methodology
+1. Static analysis with JADX
+2. String extraction and decoding
+3. Source code review
+4. Automated analysis
+
+## Key Findings
+
+### Network Permissions
+- [List permissions found]
+
+### C2 Addresses Discovered
+- [List URLs, IPs, domains]
+
+### Communication Methods
+- [Describe how malware communicates]
+
+### Obfuscation Techniques
+- [Document obfuscation methods]
+
+## Risk Assessment
+[Assess threat level]
+
+## Recommendations
+1. Block identified C2 addresses
+2. Monitor for similar APK signatures
+3. Update security policies
+
+## Technical Appendix
+[Include code snippets and technical details]
+EOF
+Step 2: Generate IOC List
+cat > ioc_list.txt << 'EOF'
+# Indicators of Compromise (IOCs)
+
+## File Hashes
+MD5: [Calculate]
+SHA1: [Calculate]
+SHA256: [Calculate]
+
+## Network IOCs
+### C2 Domains
+[List domains]
+
+### C2 IP Addresses
+[List IPs]
+
+### URLs
+[List URLs]
+
+## Behavioral IOCs
+### Permissions
+[List suspicious permissions]
+
+### Package Names
+[List malicious packages]
+EOF
+
+# Add actual hashes
+md5sum malicious_sample.apk >> ioc_list.txt
+sha256sum malicious_sample.apk >> ioc_list.txt
+Step 3: Consolidate Findings
+# Create summary of all discovered C2 addresses
+cat potential_urls.txt potential_ips.txt potential_domains.txt decoded_results.txt | \
+    sort -u > final_c2_list.txt
+
+# Display final results
+echo "=== Final C2 Address List ==="
+cat final_c2_list.txt
+Expected Outcomes
+After completing this lab, you should have:
+
+Successfully decompiled an Android APK file
+Extracted and analyzed strings from DEX files
+Identified multiple potential C2 addresses
+Decoded obfuscated strings using various techniques
+Created automated analysis scripts
+Generated professional security reports with IOCs
+Your final_c2_list.txt should contain 5-10 unique C2 indicators extracted through various methods.
+
+Troubleshooting Tips
+Issue: JADX decompilation fails
+
+Solution: Try jadx --show-bad-code -d output malicious_sample.apk to force decompilation of problematic code
+Issue: No strings extracted from DEX files
+
+Solution: Verify DEX files extracted correctly with file dex_files/*.dex and ensure strings utility is installed
+Issue: Python script import errors
+
+Solution: Install required libraries: pip3 install requests
+Issue: Cannot find C2 addresses in code
+
+Solution: Check for dynamic string construction, look in configuration classes, and examine network-related imports
+Conclusion
+This lab demonstrated practical techniques for reverse engineering Android malware to extract C2 infrastructure information. You learned to use industry-standard tools (JADX), automate analysis with Python, decode obfuscated strings, and document findings professionally. These skills are essential for mobile malware analysis and threat intelligence operations.
+
+Key Takeaways:
+
+Static analysis reveals C2 addresses in most malware samples
+Multiple analysis techniques increase discovery success
+Automation improves efficiency and consistency
+Proper documentation is critical for security operations
+Next Steps: Practice these techniques on additional APK samples, explore dynamic analysis methods, and integrate findings into threat intelligence platforms.

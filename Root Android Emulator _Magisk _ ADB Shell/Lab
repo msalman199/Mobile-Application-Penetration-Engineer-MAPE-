@@ -1,0 +1,589 @@
+Root Android Emulator (Magisk + ADB Shell)
+Objectives
+By the end of this lab, students will be able to:
+
+Configure and launch an Android emulator with rootable system images
+Install and configure Magisk for root access management
+Use ADB shell commands to interact with rooted Android devices
+Verify root access through command-line tools and Python scripts
+Understand security implications of rooted Android devices
+Prerequisites
+Basic Linux command-line proficiency
+Understanding of Android OS architecture
+Python 3.x programming fundamentals
+Familiarity with terminal environments
+Lab Environment
+This lab uses pre-configured cloud machines with:
+
+Ubuntu 22.04 LTS with GUI
+Android SDK and platform tools
+Python 3.x with required libraries
+All development tools pre-installed
+Click Start Lab to access your environment.
+
+Task 1: Prepare Android Emulator Environment
+Step 1.1: Verify SDK Installation
+Check that Android SDK tools are properly configured:
+
+# Verify environment variables
+echo $ANDROID_HOME
+
+# Check ADB version
+adb --version
+
+# List available AVDs
+emulator -list-avds
+Step 1.2: Download System Image
+Download a rootable Android system image:
+
+# Update SDK manager
+sdkmanager --update
+
+# Download Android 11 x86_64 image (rootable)
+sdkmanager "system-images;android-30;google_apis;x86_64"
+
+# Verify installation
+sdkmanager --list_installed
+Step 1.3: Create Android Virtual Device
+Create an AVD for rooting:
+
+# Create AVD
+avdmanager create avd \
+  --name "RootableEmulator" \
+  --package "system-images;android-30;google_apis;x86_64" \
+  --device "pixel_4"
+
+# Verify creation
+avdmanager list avd
+Task 2: Install and Configure Magisk
+Step 2.1: Download Magisk
+Prepare your working directory and download Magisk:
+
+# Create working directory
+mkdir -p ~/android-root-lab
+cd ~/android-root-lab
+
+# Download Magisk APK (v26.4)
+wget -O magisk.apk "https://github.com/topjohnwu/Magisk/releases/download/v26.4/Magisk-v26.4.apk"
+
+# Verify download
+ls -lh magisk.apk
+Step 2.2: Launch Emulator with Writable System
+Start the emulator with special parameters:
+
+# Start emulator with writable system
+emulator -avd RootableEmulator -writable-system -no-snapshot-load &
+
+# Wait for boot (2-3 minutes)
+sleep 120
+
+# Verify device is online
+adb devices
+Step 2.3: Prepare System for Rooting
+Configure system partition for modifications:
+
+# Restart ADB as root
+adb root
+
+# Remount system as writable
+adb remount
+
+# Verify system mount status
+adb shell mount | grep system
+
+# Install Magisk APK
+adb install magisk.apk
+Step 2.4: Extract Boot Image
+Extract the boot image for patching:
+
+# Extract boot.img from emulator
+adb shell "dd if=/dev/block/by-name/boot of=/data/local/tmp/boot.img"
+
+# Pull boot image to host
+adb pull /data/local/tmp/boot.img ./
+
+# Verify extraction
+ls -lh boot.img
+Step 2.5: Patch and Flash Boot Image
+Manual Steps Required:
+
+Push boot image to device storage:
+adb push boot.img /sdcard/Download/
+Open Magisk app on emulator
+
+Tap "Install" next to Magisk
+
+Select "Select and Patch a File"
+
+Navigate to /sdcard/Download/ and select boot.img
+
+Wait for patching to complete
+
+Pull patched image:
+
+# Find patched image
+adb shell ls /sdcard/Download/magisk_patched*
+
+# Pull patched image
+adb pull /sdcard/Download/magisk_patched-*.img ./magisk_patched.img
+Flash patched boot image:
+# Reboot to bootloader
+adb reboot bootloader
+sleep 10
+
+# Flash patched boot
+fastboot flash boot magisk_patched.img
+
+# Reboot system
+fastboot reboot
+sleep 120
+Task 3: Verify Root Access
+Step 3.1: Test Root via ADB Shell
+Verify root access through command line:
+
+# Connect to device shell
+adb shell
+
+# Request root access
+su
+
+# Verify root privileges
+id
+whoami
+
+# Check Magisk version
+magisk --version
+
+# Exit shells
+exit
+exit
+Step 3.2: Create Root Verification Script
+Create a bash script to automate verification:
+
+cat > verify_root.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Root Verification Script ==="
+
+# Check device connection
+if adb get-state &>/dev/null; then
+    echo "[PASS] Device connected"
+else
+    echo "[FAIL] Device not connected"
+    exit 1
+fi
+
+# Check su binary
+if adb shell "which su" &>/dev/null; then
+    echo "[PASS] su binary found"
+else
+    echo "[FAIL] su binary not found"
+fi
+
+# Test root access
+if adb shell "su -c 'id'" 2>/dev/null | grep -q "uid=0"; then
+    echo "[PASS] Root access confirmed"
+else
+    echo "[FAIL] Root access denied"
+fi
+
+# Check Magisk
+if adb shell "magisk --version" &>/dev/null; then
+    echo "[PASS] Magisk installed"
+else
+    echo "[FAIL] Magisk not found"
+fi
+
+echo "=== Verification Complete ==="
+EOF
+
+chmod +x verify_root.sh
+./verify_root.sh
+Task 4: Automate Root Analysis with Python
+Step 4.1: Create Root Checker Class
+Develop a Python script to check root status. Complete the implementation:
+
+#!/usr/bin/env python3
+
+import subprocess
+import json
+from datetime import datetime
+
+class AndroidRootChecker:
+    def __init__(self):
+        self.results = {
+            'timestamp': datetime.now().isoformat(),
+            'device_connected': False,
+            'root_access': False,
+            'magisk_installed': False,
+            'su_binary_present': False
+        }
+    
+    def run_adb_command(self, command, timeout=30):
+        """
+        Execute ADB command with timeout.
+        
+        Args:
+            command: ADB command string to execute
+            timeout: Command timeout in seconds
+        
+        Returns:
+            Tuple of (success, stdout, stderr)
+        """
+        # TODO: Implement subprocess.run() with proper error handling
+        # TODO: Return success status, stdout, and stderr
+        pass
+    
+    def check_device_connection(self):
+        """
+        Check if Android device is connected via ADB.
+        
+        Returns:
+            Boolean indicating connection status
+        """
+        # TODO: Run 'adb devices' command
+        # TODO: Parse output to verify device is connected
+        # TODO: Update self.results['device_connected']
+        pass
+    
+    def check_su_binary(self):
+        """
+        Check for su binary presence on device.
+        
+        Returns:
+            Boolean indicating if su binary exists
+        """
+        # TODO: Run 'adb shell which su' command
+        # TODO: Update self.results['su_binary_present']
+        pass
+    
+    def check_root_access(self):
+        """
+        Test actual root access by running 'su -c id'.
+        
+        Returns:
+            Boolean indicating if root access is available
+        """
+        # TODO: Run 'adb shell su -c id' command
+        # TODO: Check if output contains 'uid=0'
+        # TODO: Update self.results['root_access']
+        pass
+    
+    def check_magisk_installation(self):
+        """
+        Check for Magisk installation.
+        
+        Returns:
+            Boolean indicating if Magisk is installed
+        """
+        # TODO: Run 'adb shell magisk --version' command
+        # TODO: Update self.results['magisk_installed']
+        pass
+    
+    def generate_report(self):
+        """
+        Generate and print comprehensive root analysis report.
+        """
+        # TODO: Print formatted report with all check results
+        # TODO: Include timestamp and device information
+        pass
+    
+    def save_results(self, filename="root_analysis.json"):
+        """
+        Save results to JSON file.
+        
+        Args:
+            filename: Output JSON filename
+        """
+        # TODO: Write self.results to JSON file
+        pass
+    
+    def run_full_analysis(self):
+        """
+        Run complete root analysis workflow.
+        
+        Returns:
+            Boolean indicating overall success
+        """
+        # TODO: Call all check methods in sequence
+        # TODO: Generate report
+        # TODO: Save results
+        pass
+
+def main():
+    """Main execution function."""
+    # TODO: Create AndroidRootChecker instance
+    # TODO: Run full analysis
+    # TODO: Handle exceptions appropriately
+    pass
+
+if __name__ == "__main__":
+    main()
+Save as android_root_checker.py and implement the TODO sections.
+
+Step 4.2: Create Persistence Testing Script
+Test if root persists across reboots. Complete the implementation:
+
+#!/usr/bin/env python3
+
+import subprocess
+import time
+import json
+from datetime import datetime
+
+class RootPersistenceTester:
+    def __init__(self):
+        self.test_log = []
+        self.persistence_verified = False
+    
+    def log_event(self, event, status, details=""):
+        """
+        Log test events with timestamp.
+        
+        Args:
+            event: Event name
+            status: Event status
+            details: Additional details
+        """
+        # TODO: Create log entry dictionary
+        # TODO: Append to self.test_log
+        # TODO: Print formatted log message
+        pass
+    
+    def run_adb_command(self, command):
+        """
+        Execute ADB command.
+        
+        Args:
+            command: Command to execute
+        
+        Returns:
+            Tuple of (success, stdout, stderr)
+        """
+        # TODO: Implement command execution
+        pass
+    
+    def check_root_before_reboot(self):
+        """
+        Check root status before rebooting device.
+        
+        Returns:
+            Boolean indicating if root is present
+        """
+        # TODO: Run 'adb shell su -c id'
+        # TODO: Log result
+        # TODO: Return True if uid=0 found
+        pass
+    
+    def reboot_device(self):
+        """
+        Reboot device and wait for it to come back online.
+        
+        Returns:
+            Boolean indicating successful reboot
+        """
+        # TODO: Execute 'adb reboot'
+        # TODO: Wait for device to go offline
+        # TODO: Poll 'adb get-state' until device is back
+        # TODO: Implement timeout (max 180 seconds)
+        pass
+    
+    def check_root_after_reboot(self):
+        """
+        Check root status after reboot.
+        
+        Returns:
+            Boolean indicating if root persisted
+        """
+        # TODO: Wait for system to fully boot (30 seconds)
+        # TODO: Check root access again
+        # TODO: Update self.persistence_verified
+        pass
+    
+    def verify_magisk_persistence(self):
+        """
+        Verify Magisk is still installed after reboot.
+        
+        Returns:
+            Boolean indicating Magisk persistence
+        """
+        # TODO: Check Magisk version
+        # TODO: Log result
+        pass
+    
+    def generate_report(self):
+        """Generate persistence test report."""
+        # TODO: Print formatted report
+        # TODO: Include all logged events
+        # TODO: Save log to JSON file
+        pass
+    
+    def run_persistence_test(self):
+        """
+        Run complete persistence test workflow.
+        
+        Returns:
+            Boolean indicating test success
+        """
+        # TODO: Check root before reboot
+        # TODO: Reboot device
+        # TODO: Check root after reboot
+        # TODO: Verify Magisk persistence
+        # TODO: Generate report
+        pass
+
+if __name__ == "__main__":
+    # TODO: Create tester instance
+    # TODO: Run persistence test
+    pass
+Save as test_root_persistence.py and complete the implementation.
+
+Step 4.3: Create Security Assessment Tool
+Build a comprehensive security assessment tool. Complete the implementation:
+
+#!/usr/bin/env python3
+
+import subprocess
+import json
+from datetime import datetime
+
+class AndroidSecurityAssessment:
+    def __init__(self):
+        self.security_findings = {
+            'timestamp': datetime.now().isoformat(),
+            'risk_level': 'unknown',
+            'vulnerabilities': [],
+            'recommendations': [],
+            'system_info': {}
+        }
+    
+    def run_adb_command(self, command):
+        """Execute ADB command safely."""
+        # TODO: Implement with timeout and error handling
+        pass
+    
+    def gather_system_info(self):
+        """
+        Gather comprehensive system information.
+        """
+        info_commands = {
+            'android_version': "adb shell getprop ro.build.version.release",
+            'api_level': "adb shell getprop ro.build.version.sdk",
+            'security_patch': "adb shell getprop ro.build.version.security_patch",
+            'selinux_status': "adb shell getenforce"
+        }
+        
+        # TODO: Execute each command
+        # TODO: Store results in self.security_findings['system_info']
+        pass
+    
+    def check_selinux_status(self):
+        """
+        Check SELinux enforcement status.
+        """
+        # TODO: Get SELinux status
+        # TODO: If permissive or disabled, add to vulnerabilities
+        pass
+    
+    def analyze_root_status(self):
+        """
+        Analyze root status and associated risks.
+        """
+        # TODO: Check if device is rooted
+        # TODO: Assess risk level (high if rooted)
+        # TODO: Add appropriate recommendations
+        pass
+    
+    def check_security_patch_level(self):
+        """
+        Check if security patches are up to date.
+        """
+        # TODO: Get security patch date
+        # TODO: Compare with current date
+        # TODO: Flag if patches are outdated (>90 days)
+        pass
+    
+    def assess_risk_level(self):
+        """
+        Calculate overall risk level based on findings.
+        """
+        # TODO: Count vulnerabilities
+        # TODO: Assign risk level (low/medium/high/critical)
+        # TODO: Update self.security_findings['risk_level']
+        pass
+    
+    def generate_security_report(self):
+        """
+        Generate comprehensive security assessment report.
+        """
+        # TODO: Print formatted report
+        # TODO: List all vulnerabilities
+        # TODO: Provide recommendations
+        # TODO: Save to JSON file
+        pass
+    
+    def run_assessment(self):
+        """
+        Run complete security assessment.
+        """
+        # TODO: Gather system info
+        # TODO: Run all security checks
+        # TODO: Assess risk level
+        # TODO: Generate report
+        pass
+
+if __name__ == "__main__":
+    # TODO: Create assessment instance
+    # TODO: Run assessment
+    pass
+Save as security_assessment.py and implement all methods.
+
+Expected Outcomes
+After completing this lab, you should have:
+
+A rooted Android emulator with Magisk installed
+Verified root access through multiple methods
+Working Python scripts for root detection and analysis
+Understanding of root persistence mechanisms
+Knowledge of security implications of rooted devices
+Troubleshooting Tips
+Emulator won't start:
+
+Check if virtualization is enabled in BIOS
+Verify sufficient RAM allocation (minimum 2GB)
+Try: emulator -avd RootableEmulator -no-boot-anim -gpu swiftshader_indirect
+Root access denied after patching:
+
+Ensure boot image was properly patched in Magisk app
+Verify you flashed the correct patched image
+Try rebooting device: adb reboot
+ADB device not found:
+
+Restart ADB server: adb kill-server && adb start-server
+Check emulator is running: adb devices
+Verify ANDROID_HOME environment variable is set
+Magisk app crashes:
+
+Clear app data: adb shell pm clear com.topjohnwu.magisk
+Reinstall Magisk APK
+Check logcat for errors: adb logcat | grep Magisk
+Conclusion
+This lab demonstrated the complete process of rooting an Android emulator using Magisk, from initial setup through verification and security assessment. You learned to:
+
+Configure Android emulators for root access
+Use Magisk for safe and reversible rooting
+Automate root detection with Python scripts
+Assess security implications of rooted devices
+Key Takeaways:
+
+Rooting provides elevated privileges but increases security risks
+Magisk offers systemless root with better compatibility
+Automated tools are essential for security assessments
+Root persistence testing ensures reliable root access
+Next Steps:
+
+Explore Magisk modules for additional functionality
+Practice root detection bypass techniques
+Study Android security hardening methods
+Investigate mobile penetration testing frameworks
+Remember: Root access is a powerful tool for security research and testing, but should never be used on production devices without proper authorization and understanding of the risks involved.

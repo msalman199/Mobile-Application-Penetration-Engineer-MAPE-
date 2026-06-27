@@ -1,0 +1,569 @@
+Simulate Inter-App Attacks Using URL Schemes
+Objectives
+By the end of this lab, students will be able to:
+
+Understand iOS URL scheme vulnerabilities and exploitation techniques
+Test and exploit URL schemes to invoke vulnerable applications
+Intercept application data transmitted via URL schemes
+Create automated Python scripts for URL scheme testing
+Implement defensive measures against URL scheme attacks
+Prerequisites
+Basic Python programming knowledge
+Understanding of HTTP protocols
+Familiarity with command-line operations
+Basic mobile application security concepts
+Lab Environment
+Al Nafi provides pre-configured Linux-based cloud machines with all necessary tools pre-installed. Click Start Lab to access your environment immediately.
+
+Task 1: Environment Setup and URL Scheme Basics
+Step 1.1: Verify Environment
+Check Python installation and create working directory:
+
+python3 --version
+pip3 --version
+
+mkdir -p ~/url_scheme_lab/{scripts,payloads,logs,test_apps}
+cd ~/url_scheme_lab
+Step 1.2: Install Required Libraries
+pip3 install requests flask urllib3
+sudo apt update && sudo apt install -y netcat-openbsd curl
+Step 1.3: Create Vulnerable App Simulator
+Create ~/url_scheme_lab/test_apps/vulnerable_app.py:
+
+#!/usr/bin/env python3
+import sys
+import urllib.parse
+from datetime import datetime
+
+class VulnerableApp:
+    def __init__(self):
+        self.app_name = "VulnBank"
+        self.log_file = "../logs/app_activity.log"
+        
+    def log_activity(self, action, data):
+        """
+        Log application activity to file.
+        
+        Args:
+            action: Type of action performed
+            data: Data associated with the action
+        """
+        # TODO: Implement timestamp generation
+        # TODO: Format log entry with timestamp, app_name, action, and data
+        # TODO: Write to log file and print to console
+        pass
+    
+    def handle_url_scheme(self, url):
+        """
+        Process incoming URL scheme requests.
+        
+        Args:
+            url: The URL scheme to process
+            
+        Returns:
+            Boolean indicating success
+        """
+        # TODO: Parse the URL using urllib.parse.urlparse()
+        # TODO: Extract scheme, path, and query parameters
+        # TODO: Route to appropriate handler based on path
+        # TODO: Return True if successful, False otherwise
+        pass
+    
+    def handle_login(self, params):
+        """
+        Handle login requests (VULNERABLE - logs credentials).
+        
+        Args:
+            params: Dictionary of query parameters
+        """
+        # TODO: Extract 'user' and 'pass' from params
+        # TODO: Log the login attempt with credentials (vulnerability!)
+        # TODO: Simulate authentication check
+        pass
+    
+    def handle_transfer(self, params):
+        """
+        Handle money transfer requests (VULNERABLE - no auth check).
+        
+        Args:
+            params: Dictionary with amount, to, from parameters
+        """
+        # TODO: Extract amount, to_account, from_account
+        # TODO: Log transfer initiation
+        # TODO: Process transfer without authentication (vulnerability!)
+        pass
+    
+    def handle_admin(self, params):
+        """
+        Handle admin commands (EXTREMELY VULNERABLE).
+        
+        Args:
+            params: Dictionary with cmd parameter
+        """
+        # TODO: Extract command from params
+        # TODO: Log and execute command (vulnerability!)
+        pass
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 vulnerable_app.py 'url_scheme'")
+        sys.exit(1)
+    
+    # TODO: Create VulnerableApp instance
+    # TODO: Process the URL scheme from sys.argv[1]
+    # TODO: Handle any errors appropriately
+
+if __name__ == "__main__":
+    main()
+Make executable:
+
+chmod +x ~/url_scheme_lab/test_apps/vulnerable_app.py
+Step 1.4: Test Basic URL Schemes
+Test your implementation:
+
+cd ~/url_scheme_lab/test_apps
+
+# Test login
+python3 vulnerable_app.py "vulnbank://login?user=admin&pass=secret123"
+
+# Test transfer
+python3 vulnerable_app.py "vulnbank://transfer?amount=1000&from=123456&to=789012"
+
+# View logs
+cat ../logs/app_activity.log
+Task 2: URL Scheme Discovery and Exploitation
+Step 2.1: Create Discovery Script
+Create ~/url_scheme_lab/scripts/discover_schemes.py:
+
+#!/usr/bin/env python3
+import subprocess
+import time
+
+class SchemeDiscovery:
+    def __init__(self):
+        self.schemes = ["vulnbank://", "bankapp://", "securebank://"]
+        self.paths = ["/login", "/transfer", "/profile", "/admin"]
+        self.results = []
+        
+    def test_scheme(self, scheme, path, params=""):
+        """
+        Test if a URL scheme is valid and responsive.
+        
+        Args:
+            scheme: The URL scheme to test
+            path: The path component
+            params: Query parameters (optional)
+            
+        Returns:
+            Boolean indicating if scheme is valid
+        """
+        # TODO: Construct full URL from scheme, path, and params
+        # TODO: Execute vulnerable_app.py with the URL using subprocess
+        # TODO: Capture output and check for success
+        # TODO: Return True if successful, False otherwise
+        pass
+    
+    def discover_all(self):
+        """
+        Discover all valid URL schemes and paths.
+        
+        Returns:
+            List of valid URL schemes
+        """
+        # TODO: Iterate through all scheme and path combinations
+        # TODO: Test each combination using test_scheme()
+        # TODO: Store successful schemes in self.results
+        # TODO: Return list of valid schemes
+        pass
+    
+    def generate_report(self):
+        """
+        Generate discovery report and save to file.
+        """
+        # TODO: Create report with total tested and successful schemes
+        # TODO: Write report to ../logs/discovery_report.txt
+        # TODO: Print summary to console
+        pass
+
+def main():
+    # TODO: Create SchemeDiscovery instance
+    # TODO: Run discovery process
+    # TODO: Generate and display report
+
+if __name__ == "__main__":
+    main()
+Step 2.2: Run Discovery
+cd ~/url_scheme_lab/scripts
+chmod +x discover_schemes.py
+python3 discover_schemes.py
+cat ../logs/discovery_report.txt
+Step 2.3: Create Payload Generator
+Create ~/url_scheme_lab/scripts/generate_payloads.py:
+
+#!/usr/bin/env python3
+import urllib.parse
+import json
+import base64
+
+class PayloadGenerator:
+    def __init__(self, callback_url="http://localhost:5000/callback"):
+        self.callback_url = callback_url
+        self.payloads = []
+    
+    def generate_injection_payloads(self):
+        """
+        Generate SQL injection and command injection payloads.
+        """
+        # TODO: Create SQL injection payloads for login
+        # TODO: Create command injection payloads for admin
+        # TODO: Create XSS payloads for profile
+        # TODO: Add each payload to self.payloads list
+        pass
+    
+    def generate_exfiltration_payloads(self):
+        """
+        Generate payloads designed to exfiltrate data.
+        """
+        # TODO: Create payloads with callback URLs
+        # TODO: Include credential theft scenarios
+        # TODO: Include session token theft scenarios
+        # TODO: Add to self.payloads list
+        pass
+    
+    def encode_payload(self, payload):
+        """
+        Encode payload using various techniques.
+        
+        Args:
+            payload: Original payload string
+            
+        Returns:
+            Dictionary with encoded versions
+        """
+        # TODO: Create URL-encoded version
+        # TODO: Create Base64-encoded version
+        # TODO: Create double-encoded version
+        # TODO: Return dictionary with all versions
+        pass
+    
+    def save_payloads(self, filename="../payloads/attack_payloads.json"):
+        """
+        Save generated payloads to JSON file.
+        """
+        # TODO: Write self.payloads to JSON file
+        # TODO: Print confirmation message
+        pass
+
+def main():
+    # TODO: Create PayloadGenerator instance
+    # TODO: Generate injection payloads
+    # TODO: Generate exfiltration payloads
+    # TODO: Save to file and display summary
+
+if __name__ == "__main__":
+    main()
+Task 3: Data Interception and Automated Exploitation
+Step 3.1: Create Interception Server
+Create ~/url_scheme_lab/scripts/intercept_server.py:
+
+#!/usr/bin/env python3
+from flask import Flask, request, jsonify
+from datetime import datetime
+
+app = Flask(__name__)
+intercepted_data = []
+
+@app.route('/callback', methods=['GET', 'POST'])
+def callback_handler():
+    """
+    Handle callbacks from exploited applications.
+    Captures and stores all incoming data.
+    """
+    # TODO: Extract timestamp
+    # TODO: Capture request method, URL, and parameters
+    # TODO: Store in intercepted_data list
+    # TODO: Log to console
+    # TODO: Return success response
+    pass
+
+@app.route('/data')
+def view_data():
+    """
+    View all intercepted data.
+    """
+    # TODO: Return intercepted_data as JSON
+    pass
+
+@app.route('/clear')
+def clear_data():
+    """
+    Clear all intercepted data.
+    """
+    # TODO: Clear intercepted_data list
+    # TODO: Return confirmation
+    pass
+
+def main():
+    print("Starting interception server on http://localhost:5000")
+    app.run(host='0.0.0.0', port=5000, debug=False)
+
+if __name__ == '__main__':
+    main()
+Step 3.2: Start Interception Server
+cd ~/url_scheme_lab/scripts
+chmod +x intercept_server.py
+python3 intercept_server.py &
+
+# Verify server is running
+curl http://localhost:5000/data
+Step 3.3: Create Automated Exploitation Framework
+Create ~/url_scheme_lab/scripts/auto_exploit.py:
+
+#!/usr/bin/env python3
+import subprocess
+import requests
+import json
+import time
+from datetime import datetime
+
+class AutoExploiter:
+    def __init__(self, target_app, callback_server):
+        self.target_app = target_app
+        self.callback_server = callback_server
+        self.results = []
+        
+    def execute_payload(self, url, timeout=10):
+        """
+        Execute a URL scheme payload against target.
+        
+        Args:
+            url: The URL scheme to execute
+            timeout: Execution timeout in seconds
+            
+        Returns:
+            Dictionary with execution results
+        """
+        # TODO: Use subprocess to execute target_app with url
+        # TODO: Capture stdout, stderr, and return code
+        # TODO: Handle timeout exceptions
+        # TODO: Return results dictionary
+        pass
+    
+    def test_credential_theft(self):
+        """
+        Test credential theft via URL schemes.
+        """
+        # TODO: Create login URL with callback parameter
+        # TODO: Execute payload
+        # TODO: Check callback server for intercepted data
+        # TODO: Log results
+        pass
+    
+    def test_unauthorized_transfer(self):
+        """
+        Test unauthorized money transfer.
+        """
+        # TODO: Create transfer URL without authentication
+        # TODO: Execute payload
+        # TODO: Verify transfer was processed
+        # TODO: Log results
+        pass
+    
+    def test_injection_attacks(self):
+        """
+        Test various injection attack vectors.
+        """
+        # TODO: Load payloads from generated file
+        # TODO: Execute each injection payload
+        # TODO: Analyze responses for vulnerabilities
+        # TODO: Log successful injections
+        pass
+    
+    def verify_interception(self):
+        """
+        Verify data was intercepted by callback server.
+        
+        Returns:
+            List of intercepted data entries
+        """
+        # TODO: Query callback server /data endpoint
+        # TODO: Parse JSON response
+        # TODO: Return intercepted data
+        pass
+    
+    def generate_report(self):
+        """
+        Generate comprehensive exploitation report.
+        """
+        # TODO: Summarize all test results
+        # TODO: List successful exploits
+        # TODO: Include intercepted data
+        # TODO: Save to ../logs/exploitation_report.txt
+        pass
+
+def main():
+    # TODO: Create AutoExploiter instance
+    # TODO: Run credential theft tests
+    # TODO: Run unauthorized transfer tests
+    # TODO: Run injection attack tests
+    # TODO: Verify data interception
+    # TODO: Generate final report
+
+if __name__ == "__main__":
+    main()
+Step 3.4: Execute Automated Exploitation
+cd ~/url_scheme_lab/scripts
+chmod +x auto_exploit.py
+python3 auto_exploit.py
+
+# View results
+cat ../logs/exploitation_report.txt
+
+# Check intercepted data
+curl http://localhost:5000/data | python3 -m json.tool
+Step 3.5: Analyze Results
+Review the exploitation results:
+
+# View all logs
+cat ../logs/app_activity.log
+
+# View discovery results
+cat ../logs/discovery_report.txt
+
+# View exploitation report
+cat ../logs/exploitation_report.txt
+
+# Check intercepted sensitive data
+curl http://localhost:5000/data
+Task 4: Defensive Measures Implementation
+Step 4.1: Create Secure App Version
+Create ~/url_scheme_lab/test_apps/secure_app.py:
+
+#!/usr/bin/env python3
+import sys
+import urllib.parse
+import hashlib
+import hmac
+from datetime import datetime
+
+class SecureApp:
+    def __init__(self):
+        self.app_name = "SecureBank"
+        self.secret_key = "your-secret-key-here"
+        self.allowed_schemes = ["securebank://"]
+        
+    def validate_signature(self, url, signature):
+        """
+        Validate HMAC signature for URL scheme.
+        
+        Args:
+            url: The URL to validate
+            signature: The provided signature
+            
+        Returns:
+            Boolean indicating if signature is valid
+        """
+        # TODO: Generate HMAC signature using secret_key
+        # TODO: Compare with provided signature
+        # TODO: Return True if match, False otherwise
+        pass
+    
+    def sanitize_input(self, input_string):
+        """
+        Sanitize user input to prevent injection attacks.
+        
+        Args:
+            input_string: Raw input string
+            
+        Returns:
+            Sanitized string
+        """
+        # TODO: Remove or escape dangerous characters
+        # TODO: Validate against whitelist patterns
+        # TODO: Return sanitized string
+        pass
+    
+    def handle_url_scheme(self, url):
+        """
+        Securely handle URL scheme with validation.
+        
+        Args:
+            url: The URL scheme to process
+        """
+        # TODO: Validate URL scheme is in allowed list
+        # TODO: Check for required signature parameter
+        # TODO: Validate signature
+        # TODO: Sanitize all input parameters
+        # TODO: Process request only if all checks pass
+        pass
+
+def main():
+    # TODO: Implement secure URL scheme handling
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 4.2: Test Security Improvements
+cd ~/url_scheme_lab/test_apps
+
+# Test without signature (should fail)
+python3 secure_app.py "securebank://login?user=admin&pass=secret"
+
+# Test with invalid signature (should fail)
+python3 secure_app.py "securebank://login?user=admin&pass=secret&sig=invalid"
+Expected Outcomes
+After completing this lab, you should have:
+
+Working vulnerable app simulator demonstrating URL scheme weaknesses
+Discovery script identifying valid URL schemes and paths
+Payload generator creating various attack vectors
+Interception server capturing exfiltrated data
+Automated exploitation framework testing multiple vulnerabilities
+Secure app implementation with proper validation and sanitization
+Key Findings:
+
+URL schemes without validation allow unauthorized actions
+Sensitive data can be exfiltrated via callback URLs
+Injection attacks are possible through URL parameters
+Proper signature validation prevents unauthorized access
+Troubleshooting Tips
+Issue: Vulnerable app not responding
+
+Check if script has execute permissions: chmod +x vulnerable_app.py
+Verify Python path in shebang line
+Check log file for error messages
+Issue: Interception server not capturing data
+
+Ensure server is running: ps aux | grep intercept_server
+Verify port 5000 is not in use: netcat -zv localhost 5000
+Check firewall settings if accessing remotely
+Issue: Payloads not executing
+
+Verify URL encoding is correct
+Check for special characters that need escaping
+Test with simple payloads first before complex ones
+Conclusion
+This lab demonstrated critical vulnerabilities in iOS URL scheme implementations. You learned how attackers exploit weak URL scheme handlers to steal credentials, perform unauthorized actions, and exfiltrate sensitive data. The automated exploitation framework shows how these attacks can be scaled.
+
+Key Takeaways:
+
+Always validate and sanitize URL scheme parameters
+Implement signature-based authentication for sensitive operations
+Never trust data from URL schemes without verification
+Log and monitor URL scheme invocations for suspicious activity
+Use allowlists for permitted schemes and actions
+Security Best Practices:
+
+Require cryptographic signatures for sensitive URL schemes
+Implement rate limiting to prevent automated attacks
+Validate all input against strict whitelists
+Never log sensitive data like passwords or tokens
+Use secure inter-app communication alternatives when possible
+Clean up your environment:
+
+# Stop interception server
+pkill -f intercept_server.py
+
+# Archive logs for review
+cd ~/url_scheme_lab
+tar -czf url_scheme_lab_results.tar.gz logs/

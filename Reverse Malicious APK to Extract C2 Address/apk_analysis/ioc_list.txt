@@ -1,0 +1,24 @@
+cat > ioc_list.txt << 'EOF'
+# Indicators of Compromise (IOCs)
+
+## File Hashes
+MD5: [Calculate]
+SHA1: [Calculate]
+SHA256: [Calculate]
+
+## Network IOCs
+### C2 Domains
+[List domains]
+
+### C2 IP Addresses
+[List IPs]
+
+### URLs
+[List URLs]
+
+## Behavioral IOCs
+### Permissions
+[List suspicious permissions]
+
+### Package Names
+[List malicious packages]

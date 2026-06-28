@@ -1,0 +1,533 @@
+Bypass Certificate Pinning Using Frida
+Objectives
+By the end of this lab, students will be able to:
+
+Understand SSL certificate pinning mechanisms in mobile applications
+Install and configure Frida for dynamic instrumentation
+Write Frida scripts to bypass common certificate pinning implementations
+Intercept and analyze SSL/TLS traffic from Android applications
+Automate certificate pinning bypass using Python and Frida
+Prerequisites
+Students should have:
+
+Basic understanding of SSL/TLS protocols and certificate validation
+Familiarity with JavaScript and Python programming
+Knowledge of Android application architecture
+Experience with Linux command-line interfaces
+Lab Environment
+Your cloud machine includes:
+
+Frida - Dynamic instrumentation toolkit (pre-installed)
+Python 3 with frida-tools library
+Android Debug Bridge (ADB)
+Android emulator with test application
+Burp Suite Community Edition
+Text editors (nano, vim)
+All tools are pre-configured and ready to use.
+
+Task 1: Environment Setup and Verification
+Step 1: Verify Frida Installation
+# Check Frida version
+frida --version
+
+# List connected devices
+frida-ps -U
+Step 2: Start Android Environment
+# Start Android emulator
+emulator -avd test_device -no-snapshot &
+
+# Wait for device to be ready
+adb wait-for-device
+
+# Verify device connection
+adb devices
+Step 3: Deploy Frida Server
+# Push Frida server to device
+adb push /home/student/tools/frida-server /data/local/tmp/
+
+# Set executable permissions
+adb shell chmod 755 /data/local/tmp/frida-server
+
+# Start Frida server as root
+adb shell "su -c '/data/local/tmp/frida-server &'"
+
+# Verify Frida server is running
+frida-ps -U
+Step 4: Install Test Application
+# Install the vulnerable test application
+adb install /home/student/apps/pinning-test.apk
+
+# Verify installation
+adb shell pm list packages | grep pinning
+
+# Launch the application
+adb shell am start -n com.example.pinningtest/.MainActivity
+Task 2: Create Basic Certificate Pinning Bypass Scripts
+Step 1: Create Basic Bypass Script
+Create a file at /home/student/scripts/ssl_bypass.js:
+
+Java.perform(function() {
+    console.log("[+] SSL Pinning Bypass Started");
+    
+    // TODO: Implement TrustManager bypass
+    // Hint: Hook javax.net.ssl.X509TrustManager methods
+    // - checkClientTrusted
+    // - checkServerTrusted
+    // - getAcceptedIssuers
+    
+    var TrustManager = Java.use("javax.net.ssl.X509TrustManager");
+    
+    TrustManager.checkServerTrusted.implementation = function(chain, authType) {
+        // TODO: Bypass server certificate validation
+        console.log("[+] Bypassing checkServerTrusted");
+    };
+    
+    // TODO: Implement HostnameVerifier bypass
+    // Hint: Hook javax.net.ssl.HostnameVerifier.verify method
+    
+    var HostnameVerifier = Java.use("javax.net.ssl.HostnameVerifier");
+    
+    HostnameVerifier.verify.implementation = function(hostname, session) {
+        // TODO: Always return true to bypass hostname verification
+        console.log("[+] Bypassing hostname verification for: " + hostname);
+        return true;
+    };
+    
+    // TODO: Implement OkHttp CertificatePinner bypass
+    // Hint: Hook okhttp3.CertificatePinner.check method
+    
+    try {
+        var CertificatePinner = Java.use("okhttp3.CertificatePinner");
+        CertificatePinner.check.overload("java.lang.String", "java.util.List").implementation = function(hostname, peerCertificates) {
+            // TODO: Bypass OkHttp certificate pinning
+            console.log("[+] Bypassing OkHttp pinning for: " + hostname);
+        };
+    } catch(err) {
+        console.log("[-] OkHttp not found in application");
+    }
+    
+    console.log("[+] Bypass script loaded successfully");
+});
+Step 2: Test Basic Bypass
+# Run Frida with bypass script
+frida -U -f com.example.pinningtest -l /home/student/scripts/ssl_bypass.js --no-pause
+
+# Observe console output for bypass confirmations
+# Trigger network requests in the application
+Step 3: Create Advanced Bypass Script
+Create a file at /home/student/scripts/advanced_bypass.js:
+
+Java.perform(function() {
+    console.log("[+] Advanced SSL Bypass Loaded");
+    
+    // TODO: Create custom TrustManager implementation
+    // Hint: Use Java.registerClass to create a custom class
+    
+    var TrustManager = Java.use("javax.net.ssl.X509TrustManager");
+    var SSLContext = Java.use("javax.net.ssl.SSLContext");
+    
+    var CustomTrustManager = Java.registerClass({
+        name: "com.frida.CustomTrustManager",
+        implements: [TrustManager],
+        methods: {
+            checkClientTrusted: function(chain, authType) {
+                // TODO: Implement empty method
+            },
+            checkServerTrusted: function(chain, authType) {
+                // TODO: Implement empty method
+            },
+            getAcceptedIssuers: function() {
+                // TODO: Return empty array
+                return [];
+            }
+        }
+    });
+    
+    // TODO: Hook SSLContext.init to inject custom TrustManager
+    SSLContext.init.overload("[Ljavax.net.ssl.KeyManager;", "[Ljavax.net.ssl.TrustManager;", "java.security.SecureRandom").implementation = function(km, tm, sr) {
+        // TODO: Replace TrustManagers with custom implementation
+        console.log("[+] SSLContext.init hooked");
+    };
+    
+    // TODO: Hook Conscrypt TrustManagerImpl for Android 7+
+    try {
+        var TrustManagerImpl = Java.use("com.android.org.conscrypt.TrustManagerImpl");
+        TrustManagerImpl.checkTrustedRecursive.implementation = function(a1, a2, a3, a4, a5, a6) {
+            // TODO: Return empty ArrayList to bypass validation
+            console.log("[+] Bypassing Conscrypt TrustManager");
+            return Java.use("java.util.ArrayList").$new();
+        };
+    } catch(err) {
+        console.log("[-] Conscrypt TrustManager not available");
+    }
+    
+    console.log("[+] Advanced bypass configured");
+});
+Task 3: Intercept and Analyze SSL Traffic
+Step 1: Configure Burp Suite Proxy
+# Start Burp Suite
+burpsuite &
+
+# Configure Android proxy settings
+adb shell settings put global http_proxy 127.0.0.1:8080
+
+# Install Burp CA certificate (if needed)
+# Export certificate from Burp Suite and push to device
+Step 2: Create Traffic Interception Script
+Create a file at /home/student/scripts/traffic_monitor.js:
+
+Java.perform(function() {
+    console.log("[+] Traffic Monitor Started");
+    
+    // TODO: Hook URL class to log all URL accesses
+    var URL = Java.use("java.net.URL");
+    
+    URL.$init.overload("java.lang.String").implementation = function(url) {
+        // TODO: Log the URL being accessed
+        console.log("[+] URL Access: " + url);
+        return this.$init(url);
+    };
+    
+    // TODO: Hook HttpURLConnection to capture request/response data
+    var HttpURLConnection = Java.use("java.net.HttpURLConnection");
+    
+    HttpURLConnection.getResponseCode.implementation = function() {
+        // TODO: Log response code and URL
+        var responseCode = this.getResponseCode();
+        console.log("[+] Response Code: " + responseCode);
+        return responseCode;
+    };
+    
+    // TODO: Hook OkHttp Request/Response for detailed logging
+    try {
+        var OkHttpClient = Java.use("okhttp3.OkHttpClient");
+        
+        OkHttpClient.newCall.implementation = function(request) {
+            // TODO: Log request method, URL, and headers
+            console.log("[+] OkHttp Request: " + request.url().toString());
+            console.log("[+] Method: " + request.method());
+            
+            // TODO: Iterate through headers and log them
+            
+            return this.newCall(request);
+        };
+    } catch(err) {
+        console.log("[-] OkHttp not available");
+    }
+    
+    console.log("[+] Traffic monitoring active");
+});
+Step 3: Run Combined Bypass and Monitoring
+# Run both scripts simultaneously
+frida -U -f com.example.pinningtest \
+  -l /home/student/scripts/ssl_bypass.js \
+  -l /home/student/scripts/traffic_monitor.js \
+  --no-pause
+
+# Monitor output in terminal and Burp Suite
+Task 4: Automate Bypass with Python
+Step 1: Create Python Automation Script
+Create a file at /home/student/scripts/auto_bypass.py:
+
+#!/usr/bin/env python3
+
+import frida
+import sys
+import time
+import argparse
+
+class SSLBypassAutomation:
+    """
+    Automates SSL certificate pinning bypass using Frida.
+    """
+    
+    def __init__(self, package_name):
+        """
+        Initialize the bypass automation.
+        
+        Args:
+            package_name: Target Android application package name
+        """
+        self.package_name = package_name
+        self.device = None
+        self.session = None
+        self.script = None
+    
+    def connect_device(self):
+        """
+        Connect to USB-attached Android device.
+        
+        Returns:
+            bool: True if connection successful, False otherwise
+        """
+        # TODO: Use frida.get_usb_device() to connect
+        # TODO: Handle connection errors
+        # TODO: Print connection status
+        pass
+    
+    def load_bypass_script(self):
+        """
+        Load the SSL bypass JavaScript code.
+        
+        Returns:
+            str: JavaScript code for SSL bypass
+        """
+        # TODO: Define comprehensive bypass script
+        # TODO: Include TrustManager, HostnameVerifier, and OkHttp bypasses
+        # TODO: Return the script as a string
+        
+        bypass_code = """
+        Java.perform(function() {
+            // TODO: Implement bypass logic here
+        });
+        """
+        return bypass_code
+    
+    def spawn_and_attach(self):
+        """
+        Spawn the target application and attach Frida.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        # TODO: Spawn the application using device.spawn()
+        # TODO: Attach to the spawned process
+        # TODO: Create and load the bypass script
+        # TODO: Set up message handler
+        # TODO: Resume the application
+        pass
+    
+    def on_message(self, message, data):
+        """
+        Handle messages from Frida script.
+        
+        Args:
+            message: Message dictionary from Frida
+            data: Additional data payload
+        """
+        # TODO: Handle 'send' type messages
+        # TODO: Handle 'error' type messages
+        # TODO: Print formatted output
+        pass
+    
+    def monitor(self, duration=60):
+        """
+        Monitor the application for specified duration.
+        
+        Args:
+            duration: Monitoring time in seconds
+        """
+        # TODO: Keep the script running for specified duration
+        # TODO: Print monitoring status
+        pass
+    
+    def cleanup(self):
+        """
+        Clean up resources and detach from application.
+        """
+        # TODO: Unload script
+        # TODO: Detach session
+        # TODO: Print cleanup status
+        pass
+
+def main():
+    """
+    Main entry point for the automation script.
+    """
+    # TODO: Set up argument parser
+    # TODO: Parse command-line arguments
+    # TODO: Create SSLBypassAutomation instance
+    # TODO: Execute bypass workflow
+    # TODO: Handle KeyboardInterrupt
+    # TODO: Perform cleanup
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2: Create Configuration-Based Script
+Create a file at /home/student/scripts/config_bypass.py:
+
+#!/usr/bin/env python3
+
+import frida
+import json
+import argparse
+from pathlib import Path
+
+class ConfigurableBypass:
+    """
+    Configuration-driven SSL bypass automation.
+    """
+    
+    def __init__(self, config_path):
+        """
+        Initialize with configuration file.
+        
+        Args:
+            config_path: Path to JSON configuration file
+        """
+        # TODO: Load configuration from file
+        # TODO: Initialize device and session variables
+        pass
+    
+    def load_config(self, config_path):
+        """
+        Load and parse JSON configuration.
+        
+        Args:
+            config_path: Path to configuration file
+            
+        Returns:
+            dict: Parsed configuration
+        """
+        # TODO: Read JSON file
+        # TODO: Parse and validate configuration
+        # TODO: Return configuration dictionary
+        pass
+    
+    def generate_script(self, target_config):
+        """
+        Generate Frida script based on configuration.
+        
+        Args:
+            target_config: Configuration for specific target
+            
+        Returns:
+            str: Generated JavaScript code
+        """
+        # TODO: Build script based on enabled features
+        # TODO: Add TrustManager bypass if enabled
+        # TODO: Add HostnameVerifier bypass if enabled
+        # TODO: Add OkHttp bypass if enabled
+        # TODO: Add custom hooks from configuration
+        # TODO: Return complete script
+        pass
+    
+    def process_target(self, target):
+        """
+        Process a single target application.
+        
+        Args:
+            target: Target configuration dictionary
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        # TODO: Generate script for target
+        # TODO: Spawn and attach to application
+        # TODO: Load and execute script
+        # TODO: Store session information
+        pass
+    
+    def run_all_targets(self):
+        """
+        Process all configured targets.
+        """
+        # TODO: Iterate through all targets in configuration
+        # TODO: Process each target
+        # TODO: Monitor all active sessions
+        # TODO: Handle errors gracefully
+        pass
+
+def create_sample_config():
+    """
+    Create a sample configuration file for reference.
+    """
+    sample = {
+        "targets": [
+            {
+                "package": "com.example.pinningtest",
+                "bypass_trustmanager": True,
+                "bypass_hostname_verifier": True,
+                "bypass_okhttp": True,
+                "custom_hooks": []
+            }
+        ],
+        "monitor_duration": 120
+    }
+    
+    # TODO: Write sample configuration to file
+    # TODO: Print confirmation message
+    pass
+
+def main():
+    """
+    Main entry point for configuration-based bypass.
+    """
+    # TODO: Parse command-line arguments
+    # TODO: Handle --create-config option
+    # TODO: Validate configuration file exists
+    # TODO: Create and run ConfigurableBypass instance
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3: Test Automation Scripts
+# Make scripts executable
+chmod +x /home/student/scripts/auto_bypass.py
+chmod +x /home/student/scripts/config_bypass.py
+
+# Create sample configuration
+python3 /home/student/scripts/config_bypass.py --create-config
+
+# Edit configuration as needed
+nano /home/student/scripts/bypass_config.json
+
+# Run basic automation
+python3 /home/student/scripts/auto_bypass.py com.example.pinningtest --monitor-time 30
+
+# Run configuration-based bypass
+python3 /home/student/scripts/config_bypass.py --config /home/student/scripts/bypass_config.json
+Expected Outcomes
+After completing this lab, you should be able to:
+
+Successfully bypass SSL certificate pinning in Android applications
+Intercept HTTPS traffic using Burp Suite with Frida
+Write custom Frida scripts for different pinning implementations
+Automate the bypass process using Python scripts
+Understand common certificate pinning patterns and countermeasures
+Verification Steps
+Frida Script Success: Console shows bypass confirmation messages
+Traffic Interception: Burp Suite displays decrypted HTTPS traffic
+Application Functionality: App continues to work normally despite bypass
+Python Automation: Scripts successfully spawn and instrument applications
+Troubleshooting Tips
+Issue: Frida Server Not Running
+# Check if Frida server is running
+adb shell ps | grep frida-server
+
+# Restart Frida server
+adb shell "su -c 'killall frida-server'"
+adb shell "su -c '/data/local/tmp/frida-server &'"
+Issue: Application Crashes on Hook
+Cause: Incorrect method signature or class name
+Solution: Use frida-trace to identify correct signatures
+Command: frida-trace -U -f com.example.pinningtest -j '*!*check*/i'
+Issue: No Traffic in Burp Suite
+Verify proxy settings: adb shell settings get global http_proxy
+Check certificate installation: Ensure Burp CA cert is installed
+Restart application: Some apps cache proxy settings
+Issue: Script Injection Fails
+Check package name: Verify with adb shell pm list packages
+Verify device connection: Run frida-ps -U
+Check for anti-Frida: Some apps detect Frida; try obfuscation techniques
+Conclusion
+This lab demonstrated practical techniques for bypassing SSL certificate pinning in Android applications using Frida. You learned to:
+
+Write JavaScript hooks to intercept SSL/TLS validation
+Automate bypass procedures with Python scripts
+Analyze encrypted traffic using proxy tools
+Handle multiple pinning implementations
+Key Takeaways:
+
+Certificate pinning is a defense-in-depth mechanism, not foolproof
+Dynamic instrumentation tools like Frida are powerful for security testing
+Understanding the underlying SSL/TLS implementation is crucial for effective bypass
+Automation improves efficiency in security assessments
+Next Steps:
+
+Explore anti-Frida detection and evasion techniques
+Study native code pinning implementations
+Practice on real-world applications (with permission)
+Learn about SSL/TLS best practices for developers
+Security Note: These techniques should only be used for authorized security testing, research, or educational purposes. Unauthorized interception of network traffic may violate laws and regulations.

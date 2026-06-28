@@ -1,0 +1,566 @@
+Modify App Behavior Using Frida's CLI Toolkit
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Frida's command-line toolkit for mobile application testing
+Hook methods in Android applications to intercept and modify runtime behavior
+Identify common mobile application security vulnerabilities using dynamic analysis
+Create Frida scripts to automate penetration testing workflows
+Use Python to orchestrate automated security testing campaigns
+Prerequisites
+Before starting this lab, students should have:
+
+Basic Linux command line proficiency
+Understanding of Android application architecture and components
+Fundamental JavaScript syntax knowledge
+Basic Python programming skills
+Familiarity with mobile application security concepts
+Lab Environment
+Your cloud environment includes:
+
+Ubuntu 20.04 LTS with Frida toolkit pre-installed
+Android Debug Bridge (ADB) configured
+Android emulator with vulnerable test application (InsecureBankv2)
+Python 3.8+ with Frida bindings
+All necessary dependencies and tools
+Task 1: Configure Frida and Hook Application Methods
+Step 1: Verify Environment and Start Target Application
+Check that Frida is properly installed and launch the test environment:
+
+# Verify Frida installation
+frida --version
+python3 -c "import frida; print(frida.__version__)"
+
+# Start Android emulator
+emulator -avd test_device -no-snapshot-load &
+sleep 120
+
+# Verify device connection
+adb devices
+
+# Install and launch vulnerable application
+cd ~/Downloads
+adb install InsecureBankv2.apk
+adb shell am start -n com.android.insecurebankv2/.PostLogin
+
+# Confirm application is running
+frida-ps -U | grep insecurebank
+Step 2: Create Basic Method Hook Script
+Create a JavaScript file to intercept login functionality:
+
+mkdir -p ~/frida_scripts
+cd ~/frida_scripts
+nano login_hook.js
+Add the following starter template:
+
+Java.perform(function() {
+    console.log("[+] Frida script loaded");
+    
+    // TODO: Use Java.use() to get reference to PostLogin class
+    // var LoginActivity = Java.use("com.android.insecurebankv2.PostLogin");
+    
+    // TODO: Hook the performLogin method
+    // LoginActivity.performLogin.implementation = function(username, password) {
+    //     TODO: Log intercepted credentials
+    //     TODO: Call original method and return result
+    // };
+    
+    console.log("[+] Hook installation complete");
+});
+Student Task: Complete the hook to intercept and log login credentials.
+
+Step 3: Execute Hook Script
+Run your Frida script against the target application:
+
+# Launch with script injection
+frida -U -f com.android.insecurebankv2 -l login_hook.js --no-pause
+
+# Alternative: Attach to running process
+frida -U com.android.insecurebankv2 -l login_hook.js
+Test by attempting login in the application and observe intercepted data.
+
+Step 4: Create Advanced Multi-Method Hook
+Build a more comprehensive hook targeting multiple security-relevant methods:
+
+nano advanced_hook.js
+Java.perform(function() {
+    console.log("[+] Advanced hooking initiated");
+    
+    try {
+        // TODO: Hook authentication validation
+        // var PostLogin = Java.use("com.android.insecurebankv2.PostLogin");
+        // PostLogin.performLogin.implementation = function(username, password) {
+        //     TODO: Bypass authentication by always returning success
+        // };
+        
+        // TODO: Hook cryptographic operations
+        // var CryptoClass = Java.use("com.android.insecurebankv2.CryptoClass");
+        // CryptoClass.encrypt.implementation = function(data) {
+        //     TODO: Return plaintext instead of encrypted data
+        // };
+        
+        // TODO: Hook data storage operations
+        // var SharedPreferences = Java.use("android.content.SharedPreferences$Editor");
+        // SharedPreferences.putString.implementation = function(key, value) {
+        //     TODO: Log sensitive data being stored
+        //     TODO: Call original method
+        // };
+        
+    } catch (error) {
+        console.log("[-] Error: " + error);
+    }
+});
+Student Task: Implement hooks to bypass authentication and intercept cryptographic operations.
+
+Step 5: Test Advanced Hooks
+Execute and validate your advanced hook script:
+
+frida -U -f com.android.insecurebankv2 -l advanced_hook.js --no-pause
+Interact with the application to trigger hooked methods and verify behavior modifications.
+
+Task 2: Identify and Exploit Application Vulnerabilities
+Step 1: Create Vulnerability Scanner Script
+Build a script to automatically detect common security issues:
+
+nano vulnerability_scanner.js
+Java.perform(function() {
+    console.log("[+] Vulnerability scanner started");
+    
+    // TODO: Hook SharedPreferences to detect insecure storage
+    // var Editor = Java.use("android.content.SharedPreferences$Editor");
+    // Editor.putString.implementation = function(key, value) {
+    //     TODO: Check if value contains sensitive keywords (password, token, secret)
+    //     TODO: Log vulnerability if sensitive data detected
+    //     TODO: Return original method call
+    // };
+    
+    // TODO: Hook HTTP connections to detect insecure communications
+    // var HttpURLConnection = Java.use("java.net.HttpURLConnection");
+    // HttpURLConnection.setRequestMethod.implementation = function(method) {
+    //     TODO: Get URL being accessed
+    //     TODO: Check if using HTTP instead of HTTPS
+    //     TODO: Log vulnerability if insecure protocol detected
+    // };
+    
+    // TODO: Hook WebView to detect XSS vulnerabilities
+    // var WebView = Java.use("android.webkit.WebView");
+    // WebView.loadUrl.implementation = function(url) {
+    //     TODO: Check for javascript: protocol in URL
+    //     TODO: Log potential XSS vector
+    // };
+    
+    console.log("[+] Scanner hooks installed");
+});
+Student Task: Complete the vulnerability detection logic for each security check.
+
+Step 2: Implement Authentication Bypass
+Create a script to bypass authentication mechanisms:
+
+nano auth_bypass.js
+Java.perform(function() {
+    console.log("[+] Authentication bypass loaded");
+    
+    try {
+        // TODO: Enumerate loaded classes to find authentication-related classes
+        // var classes = Java.enumerateLoadedClassesSync();
+        // classes.forEach(function(className) {
+        //     TODO: Filter classes containing "Login" or "Auth"
+        //     TODO: Hook boolean methods that might validate credentials
+        //     TODO: Force return true for authentication checks
+        // });
+        
+        // TODO: Hook specific known authentication methods
+        // var PostLogin = Java.use("com.android.insecurebankv2.PostLogin");
+        // PostLogin.checkUserCredentials.implementation = function(username, password) {
+        //     TODO: Always return true to bypass credential check
+        // };
+        
+    } catch (error) {
+        console.log("[-] Error: " + error);
+    }
+});
+Student Task: Implement class enumeration and authentication bypass logic.
+
+Step 3: Create Input Validation Bypass
+Develop a script to circumvent input validation and sanitization:
+
+nano validation_bypass.js
+Java.perform(function() {
+    console.log("[+] Input validation bypass started");
+    
+    // TODO: Hook String.matches() to bypass regex validation
+    // var String = Java.use("java.lang.String");
+    // String.matches.implementation = function(regex) {
+    //     TODO: Log the regex pattern being checked
+    //     TODO: Always return true to bypass validation
+    // };
+    
+    // TODO: Hook String.replaceAll() to prevent sanitization
+    // String.replaceAll.implementation = function(regex, replacement) {
+    //     TODO: Detect when sanitization is attempted
+    //     TODO: Return original unsanitized input
+    // };
+    
+    // TODO: Hook String.length() to bypass length restrictions
+    // String.length.implementation = function() {
+    //     TODO: Return safe length value for inputs exceeding limits
+    // };
+    
+    console.log("[+] Validation bypass hooks installed");
+});
+Student Task: Complete the validation bypass implementations.
+
+Step 4: Execute Vulnerability Exploitation
+Test your exploitation scripts:
+
+# Test vulnerability scanner
+frida -U com.android.insecurebankv2 -l vulnerability_scanner.js
+
+# Test authentication bypass
+frida -U com.android.insecurebankv2 -l auth_bypass.js
+
+# Test validation bypass
+frida -U com.android.insecurebankv2 -l validation_bypass.js
+Document discovered vulnerabilities and successful exploits.
+
+Task 3: Automate Testing with Python
+Step 1: Create Python Automation Framework
+Build a Python script to orchestrate Frida operations:
+
+nano frida_automation.py
+#!/usr/bin/env python3
+
+import frida
+import sys
+import time
+import subprocess
+
+class FridaAutomation:
+    def __init__(self, package_name):
+        self.package_name = package_name
+        self.device = None
+        self.session = None
+        self.script = None
+    
+    def connect_device(self):
+        """
+        Connect to USB-attached Android device.
+        
+        Returns:
+            bool: True if connection successful
+        """
+        # TODO: Use frida.get_usb_device() to connect
+        # TODO: Handle connection errors
+        # TODO: Return connection status
+        pass
+    
+    def start_application(self):
+        """
+        Launch the target application using ADB.
+        
+        Returns:
+            bool: True if application started successfully
+        """
+        # TODO: Use subprocess to run adb shell am start command
+        # TODO: Wait for application to initialize
+        # TODO: Return success status
+        pass
+    
+    def attach_to_process(self):
+        """
+        Attach Frida to the running application process.
+        
+        Returns:
+            bool: True if attachment successful
+        """
+        # TODO: Use device.attach() with package name
+        # TODO: Store session reference
+        # TODO: Handle attachment errors
+        pass
+    
+    def load_script(self, script_file):
+        """
+        Load and execute Frida JavaScript from file.
+        
+        Args:
+            script_file: Path to JavaScript file
+            
+        Returns:
+            bool: True if script loaded successfully
+        """
+        # TODO: Read script content from file
+        # TODO: Create script using session.create_script()
+        # TODO: Set up message handler with on_message callback
+        # TODO: Load the script
+        pass
+    
+    def on_message(self, message, data):
+        """Handle messages from Frida script"""
+        # TODO: Process 'send' type messages
+        # TODO: Handle 'error' type messages
+        pass
+    
+    def run_automated_test(self, script_file):
+        """
+        Execute complete automated testing workflow.
+        
+        Args:
+            script_file: Path to Frida script
+            
+        Returns:
+            bool: True if test completed successfully
+        """
+        # TODO: Connect to device
+        # TODO: Start application
+        # TODO: Attach to process
+        # TODO: Load and execute script
+        # TODO: Keep script running until interrupted
+        pass
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python3 frida_automation.py <package_name> <script_file>")
+        sys.exit(1)
+    
+    # TODO: Parse command line arguments
+    # TODO: Create FridaAutomation instance
+    # TODO: Run automated test
+    pass
+
+if __name__ == "__main__":
+    main()
+Student Task: Implement all TODO sections to create a functional automation framework.
+
+Step 2: Build Advanced Testing Suite
+Create a comprehensive testing suite with multiple attack vectors:
+
+nano advanced_testing_suite.py
+#!/usr/bin/env python3
+
+import frida
+import time
+import json
+import sys
+
+class AdvancedFridaTestSuite:
+    def __init__(self, package_name):
+        self.package_name = package_name
+        self.device = frida.get_usb_device()
+        self.results = []
+    
+    def test_authentication_bypass(self):
+        """
+        Test for authentication bypass vulnerabilities.
+        
+        Returns:
+            dict: Test results with status and findings
+        """
+        script_code = """
+        Java.perform(function() {
+            // TODO: Hook authentication methods
+            // TODO: Attempt to bypass authentication
+            // TODO: Send results using send() function
+        });
+        """
+        # TODO: Execute test script
+        # TODO: Collect and return results
+        pass
+    
+    def test_crypto_bypass(self):
+        """
+        Test for cryptographic implementation weaknesses.
+        
+        Returns:
+            dict: Test results with status and findings
+        """
+        # TODO: Create script to hook crypto operations
+        # TODO: Execute test and collect results
+        pass
+    
+    def test_data_leakage(self):
+        """
+        Test for data leakage through logs and storage.
+        
+        Returns:
+            dict: Test results with status and findings
+        """
+        # TODO: Hook logging and storage methods
+        # TODO: Detect sensitive data exposure
+        pass
+    
+    def execute_test(self, test_name, script_code):
+        """
+        Execute a single test case.
+        
+        Args:
+            test_name: Name of the test
+            script_code: JavaScript code to execute
+            
+        Returns:
+            dict: Test execution results
+        """
+        # TODO: Attach to application
+        # TODO: Create and load script
+        # TODO: Collect messages
+        # TODO: Return structured results
+        pass
+    
+    def run_all_tests(self):
+        """
+        Execute all security tests in sequence.
+        
+        Returns:
+            list: Results from all tests
+        """
+        # TODO: Start application
+        # TODO: Run each test method
+        # TODO: Generate comprehensive report
+        pass
+    
+    def generate_report(self, results):
+        """
+        Generate formatted test report.
+        
+        Args:
+            results: List of test results
+        """
+        # TODO: Format results for console output
+        # TODO: Save results to JSON file
+        # TODO: Highlight critical findings
+        pass
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 advanced_testing_suite.py <package_name>")
+        sys.exit(1)
+    
+    # TODO: Create test suite instance
+    # TODO: Run all tests
+    # TODO: Display results
+    pass
+
+if __name__ == "__main__":
+    main()
+Student Task: Complete the testing suite implementation with all test methods.
+
+Step 3: Implement Continuous Monitoring
+Create a script for ongoing security monitoring:
+
+nano continuous_testing.py
+#!/usr/bin/env python3
+
+import frida
+import time
+import json
+from datetime import datetime
+
+class ContinuousFridaTesting:
+    def __init__(self, package_name, interval=300):
+        self.package_name = package_name
+        self.interval = interval
+        self.device = frida.get_usb_device()
+        self.test_count = 0
+    
+    def monitor_application(self):
+        """
+        Continuously monitor application for security issues.
+        """
+        # TODO: Implement infinite monitoring loop
+        # TODO: Check if application is running
+        # TODO: Execute security scans at intervals
+        # TODO: Log results with timestamps
+        pass
+    
+    def is_app_running(self):
+        """
+        Check if target application is currently running.
+        
+        Returns:
+            bool: True if application is running
+        """
+        # TODO: Use ADB to check running processes
+        pass
+    
+    def run_security_scan(self):
+        """
+        Execute quick security scan.
+        
+        Returns:
+            list: Security findings from scan
+        """
+        # TODO: Create scan script
+        # TODO: Check for insecure storage
+        # TODO: Check for weak cryptography
+        # TODO: Return findings
+        pass
+    
+    def log_results(self, timestamp, results):
+        """
+        Log test results to file.
+        
+        Args:
+            timestamp: Test execution time
+            results: Test results to log
+        """
+        # TODO: Format log entry
+        # TODO: Append to log file
+        # TODO: Print summary to console
+        pass
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python3 continuous_testing.py <package_name> [interval]")
+        sys.exit(1)
+    
+    # TODO: Parse arguments
+    # TODO: Create monitoring instance
+    # TODO: Start continuous monitoring
+    pass
+
+if __name__ == "__main__":
+    main()
+Student Task: Implement continuous monitoring with proper error handling.
+
+Step 4: Execute Automated Testing
+Test your automation scripts:
+
+# Make scripts executable
+chmod +x frida_automation.py advanced_testing_suite.py continuous_testing.py
+
+# Test basic automation
+python3 frida_automation.py com.android.insecurebankv2 login_hook.js
+
+# Run comprehensive test suite
+python3 advanced_testing_suite.py com.android.insecurebankv2
+
+# Start continuous monitoring (5-minute intervals)
+python3 continuous_testing.py com.android.insecurebankv2 300
+Review generated reports and logs to verify automation functionality.
+
+Expected Outcomes
+Upon completing this lab, students should have:
+
+Successfully hooked and modified Android application behavior using Frida CLI
+Created JavaScript scripts to intercept authentication, cryptography, and data storage
+Identified multiple security vulnerabilities through dynamic analysis
+Built Python automation frameworks for efficient security testing
+Generated comprehensive security test reports
+Demonstrated ability to bypass common mobile application security controls
+Troubleshooting Tips
+Issue: Frida cannot connect to device
+
+Verify ADB connection: adb devices
+Restart ADB server: adb kill-server && adb start-server
+Check USB debugging is enabled on device/emulator
+Issue: Script fails to hook methods
+
+Verify correct class and method names using jadx or similar decompiler
+Ensure application is running before attaching
+Check for obfuscation that may change class names
+Issue: Python scripts fail with import errors
+
+Install Frida Python bindings: pip3 install frida-tools
+Verify Python version compatibility (3.8+)
+Check virtual environment activation if applicable
+Conclusion
+This lab provided hands-on experience with Frida's CLI toolkit for dynamic mobile application security testing. Students learned to intercept and modify application behavior at runtime, identify common vulnerabilities, and automate testing workflows using Python. These skills are essential for mobile application penetration testing and security research. Continue practicing by analyzing additional vulnerable applications and expanding your automation frameworks to cover more attack vectors.

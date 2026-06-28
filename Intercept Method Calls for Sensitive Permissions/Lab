@@ -1,0 +1,477 @@
+Intercept Method Calls for Sensitive Permissions
+Objectives
+By the end of this lab, students will be able to:
+
+Hook and intercept Android permission check methods using Frida
+Analyze permission-related method calls in mobile applications
+Modify application behavior to bypass permission restrictions
+Create automated Frida scripts for permission manipulation
+Integrate Python with Frida for advanced permission testing
+Understand security implications of permission bypass vulnerabilities
+Prerequisites
+Basic understanding of Android application architecture and permissions model
+Familiarity with JavaScript and Python programming
+Command-line interface experience
+Completion of introductory Frida labs or equivalent knowledge
+Lab Environment
+Your cloud machine includes:
+
+Frida - Dynamic instrumentation framework
+Python 3 with Frida bindings
+Android Debug Bridge (ADB)
+Android emulator with test applications
+Text editors (nano, vim)
+Sample vulnerable Android application (PermissionTestApp.apk)
+All tools are pre-configured. Click Start Lab to access your environment.
+
+Task 1: Analyze Permission Check Methods
+Step 1: Install and Launch Target Application
+# Navigate to lab directory
+cd /home/student/lab18
+
+# Install test application
+adb install test-apps/PermissionTestApp.apk
+
+# Verify installation
+adb shell pm list packages | grep permission
+
+# Launch the application
+adb shell am start -n com.example.permissiontest/.MainActivity
+Step 2: Create Permission Analysis Script
+Create a Frida script to identify permission-related method calls:
+
+nano permission_analysis.js
+Add the following starter template:
+
+// Permission Analysis Script
+console.log("[*] Starting permission method analysis...");
+
+Java.perform(function() {
+    // TODO: Hook ContextWrapper.checkSelfPermission
+    // Hint: Use Java.use("android.content.ContextWrapper")
+    // Log the permission parameter and return value
+    
+    // TODO: Hook ActivityCompat.checkSelfPermission
+    // Hint: Use Java.use("androidx.core.app.ActivityCompat")
+    // This method takes context and permission as parameters
+    
+    // TODO: Hook PackageManager.checkPermission
+    // Hint: Use Java.use("android.content.pm.PackageManager")
+    // Log both permission name and package name
+    
+    console.log("[+] Permission analysis hooks installed");
+});
+Step 3: Execute Analysis Script
+# Run Frida script against the target application
+frida -U -f com.example.permissiontest -l permission_analysis.js --no-pause
+
+# Interact with the app to trigger permission checks
+# Observe console output for permission method calls
+Step 4: Monitor Runtime Permission Requests
+Create a script to monitor runtime permission dialogs:
+
+nano runtime_permission_monitor.js
+Add starter code:
+
+// Runtime Permission Monitor
+console.log("[*] Monitoring runtime permission requests...");
+
+Java.perform(function() {
+    var Activity = Java.use("android.app.Activity");
+    
+    // TODO: Hook Activity.requestPermissions method
+    // Log the permissions array and request code
+    // Iterate through permissions array to log each one
+    
+    // TODO: Hook Activity.onRequestPermissionsResult
+    // Log request code, permissions, and grant results
+    // Compare grantResults values: 0 = GRANTED, -1 = DENIED
+    
+    console.log("[+] Runtime permission monitoring active");
+});
+Test the monitoring script:
+
+frida -U -f com.example.permissiontest -l runtime_permission_monitor.js --no-pause
+Task 2: Implement Permission Bypass Techniques
+Step 1: Create Basic Bypass Script
+Develop a script that bypasses permission checks:
+
+nano permission_bypass.js
+Add the following template:
+
+// Permission Bypass Script
+console.log("[*] Loading permission bypass hooks...");
+
+Java.perform(function() {
+    var PERMISSION_GRANTED = 0;
+    var PERMISSION_DENIED = -1;
+    
+    // TODO: Hook ContextWrapper.checkSelfPermission
+    // Always return PERMISSION_GRANTED instead of calling original method
+    // Log which permission is being bypassed
+    
+    // TODO: Hook ActivityCompat.checkSelfPermission
+    // Return PERMISSION_GRANTED for all permission checks
+    
+    // TODO: Hook PackageManager.checkPermission
+    // Return PERMISSION_GRANTED regardless of actual permission status
+    
+    console.log("[+] Permission bypass hooks installed");
+});
+Step 2: Test Basic Bypass
+# Run bypass script
+frida -U -f com.example.permissiontest -l permission_bypass.js --no-pause
+
+# Test permission-dependent features (camera, location, storage)
+# Verify features work without granting permissions
+Step 3: Implement Selective Bypass
+Create a more sophisticated selective bypass:
+
+nano selective_permission_bypass.js
+Add starter template:
+
+// Selective Permission Bypass Script
+console.log("[*] Loading selective permission bypass...");
+
+Java.perform(function() {
+    var PERMISSION_GRANTED = 0;
+    var PERMISSION_DENIED = -1;
+    
+    // Define permissions to bypass
+    var bypassPermissions = [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE"
+    ];
+    
+    // Define permissions to block
+    var blockPermissions = [
+        "android.permission.SEND_SMS",
+        "android.permission.CALL_PHONE"
+    ];
+    
+    // TODO: Create helper function shouldBypassPermission(permission)
+    // Check if permission is in bypassPermissions array
+    
+    // TODO: Create helper function shouldBlockPermission(permission)
+    // Check if permission is in blockPermissions array
+    
+    // TODO: Hook ContextWrapper.checkSelfPermission with conditional logic
+    // If permission should be bypassed, return GRANTED
+    // If permission should be blocked, return DENIED
+    // Otherwise, return original result
+    
+    // TODO: Apply same logic to ActivityCompat.checkSelfPermission
+    
+    console.log("[+] Selective bypass hooks installed");
+});
+Step 4: Verify Selective Bypass
+# Test selective bypass
+frida -U -f com.example.permissiontest -l selective_permission_bypass.js --no-pause
+
+# Verify bypassed permissions work
+# Verify blocked permissions are denied
+Task 3: Automate with Python
+Step 1: Create Python Automation Framework
+Develop a Python script for automated permission bypass:
+
+nano permission_bypass_automation.py
+Add the following starter code:
+
+#!/usr/bin/env python3
+"""
+Permission Bypass Automation Framework
+"""
+
+import frida
+import sys
+import time
+import json
+
+class PermissionBypassAutomator:
+    def __init__(self, package_name):
+        self.package_name = package_name
+        self.session = None
+        self.script = None
+        
+        # Configuration
+        self.config = {
+            "bypass_permissions": [
+                "android.permission.CAMERA",
+                "android.permission.ACCESS_FINE_LOCATION"
+            ],
+            "block_permissions": [],
+            "log_all_checks": True
+        }
+    
+    def get_frida_script(self):
+        """
+        Generate Frida script based on configuration
+        
+        Returns:
+            String containing JavaScript code for Frida
+        """
+        # TODO: Create JavaScript template that uses self.config
+        # Include permission bypass logic
+        # Use send() to communicate with Python
+        pass
+    
+    def on_message(self, message, data):
+        """
+        Handle messages from Frida script
+        
+        Args:
+            message: Message dictionary from Frida
+            data: Binary data (if any)
+        """
+        # TODO: Process 'send' type messages
+        # TODO: Handle 'error' type messages
+        # TODO: Print formatted permission check information
+        pass
+    
+    def start_bypass(self):
+        """
+        Start the permission bypass automation
+        
+        Returns:
+            Boolean indicating success
+        """
+        # TODO: Connect to USB device using frida.get_usb_device()
+        # TODO: Spawn the target package
+        # TODO: Attach to the process
+        # TODO: Create and load script
+        # TODO: Resume the application
+        pass
+    
+    def stop_bypass(self):
+        """Stop the permission bypass automation"""
+        # TODO: Unload script
+        # TODO: Detach session
+        pass
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 permission_bypass_automation.py <package_name>")
+        sys.exit(1)
+    
+    package_name = sys.argv[1]
+    automator = PermissionBypassAutomator(package_name)
+    
+    try:
+        # TODO: Start bypass automation
+        # TODO: Keep running until interrupted
+        pass
+    except KeyboardInterrupt:
+        print("\n[+] Stopping automation...")
+        automator.stop_bypass()
+
+if __name__ == "__main__":
+    main()
+Step 2: Create Configuration Files
+Create JSON configuration for different scenarios:
+
+# Basic bypass configuration
+nano config_basic_bypass.json
+{
+    "bypass_permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE"
+    ],
+    "block_permissions": [],
+    "log_all_checks": true
+}
+Create aggressive bypass configuration:
+
+nano config_aggressive_bypass.json
+{
+    "bypass_permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_CONTACTS",
+        "android.permission.READ_SMS"
+    ],
+    "block_permissions": [
+        "android.permission.SEND_SMS",
+        "android.permission.CALL_PHONE"
+    ],
+    "log_all_checks": true
+}
+Step 3: Create Advanced Monitoring Script
+Develop comprehensive permission monitoring:
+
+nano advanced_permission_monitor.py
+Add starter template:
+
+#!/usr/bin/env python3
+"""
+Advanced Permission Monitor
+Logs all permission activities to CSV
+"""
+
+import frida
+import sys
+import csv
+import time
+from datetime import datetime
+
+class AdvancedPermissionMonitor:
+    def __init__(self, package_name):
+        self.package_name = package_name
+        self.log_file = f"permission_log_{int(time.time())}.csv"
+        self.permission_stats = {}
+        
+        # TODO: Initialize CSV file with headers
+        # Headers: timestamp, method, permission, result, package
+    
+    def log_permission_check(self, data):
+        """
+        Log permission check to CSV and update statistics
+        
+        Args:
+            data: Dictionary with permission check information
+        """
+        # TODO: Write data to CSV file
+        # TODO: Update permission_stats dictionary
+        # Track total checks, granted count, denied count per permission
+        pass
+    
+    def get_monitoring_script(self):
+        """
+        Generate comprehensive monitoring script
+        
+        Returns:
+            JavaScript code for Frida
+        """
+        # TODO: Create script that hooks all permission methods
+        # TODO: Use send() to pass data to Python
+        # TODO: Include hooks for:
+        #   - ContextWrapper.checkSelfPermission
+        #   - ActivityCompat.checkSelfPermission
+        #   - PackageManager.checkPermission
+        #   - Activity.requestPermissions
+        #   - Activity.onRequestPermissionsResult
+        pass
+    
+    def on_message(self, message, data):
+        """Handle messages from Frida script"""
+        # TODO: Process messages and log permission checks
+        # TODO: Print formatted output to console
+        pass
+    
+    def start_monitoring(self):
+        """Start permission monitoring"""
+        # TODO: Connect to device and spawn application
+        # TODO: Load monitoring script
+        # TODO: Resume application
+        pass
+    
+    def stop_monitoring(self):
+        """Stop monitoring and display statistics"""
+        # TODO: Unload script and detach
+        # TODO: Call display_statistics()
+        pass
+    
+    def display_statistics(self):
+        """Display permission usage statistics"""
+        # TODO: Print summary of permission checks
+        # TODO: Show grant/deny rates for each permission
+        # TODO: Display total checks per permission
+        pass
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 advanced_permission_monitor.py <package_name>")
+        sys.exit(1)
+    
+    package_name = sys.argv[1]
+    monitor = AdvancedPermissionMonitor(package_name)
+    
+    try:
+        # TODO: Start monitoring
+        # TODO: Keep running until interrupted
+        pass
+    except KeyboardInterrupt:
+        monitor.stop_monitoring()
+
+if __name__ == "__main__":
+    main()
+Step 4: Test Python Scripts
+# Make scripts executable
+chmod +x permission_bypass_automation.py
+chmod +x advanced_permission_monitor.py
+
+# Test basic automation
+python3 permission_bypass_automation.py com.example.permissiontest
+
+# Test advanced monitoring (in separate terminal)
+python3 advanced_permission_monitor.py com.example.permissiontest
+Expected Outcomes
+After completing this lab, you should have:
+
+Working Frida scripts that intercept permission checks
+Bypass mechanisms for Android permission restrictions
+Python automation tools for permission manipulation
+Monitoring capabilities with CSV logging and statistics
+Understanding of permission security vulnerabilities
+Key observations:
+
+Permission checks can be intercepted at multiple API levels
+Applications rely on system-level permission enforcement
+Bypassing permission checks reveals sensitive functionality
+Automated tools enable systematic permission testing
+Troubleshooting Tips
+Issue: Frida fails to attach to application
+
+Verify device is connected: adb devices
+Check Frida server is running on device: adb shell ps | grep frida
+Restart Frida server: adb shell killall frida-server && adb shell /data/local/tmp/frida-server &
+Issue: Hooks not triggering
+
+Verify correct class and method names using frida-trace
+Check if app uses custom permission checking methods
+Ensure Java.perform() wrapper is used correctly
+Issue: Application crashes after hooking
+
+Check return types match original method signatures
+Verify all parameters are handled correctly
+Use try-catch blocks around hook implementations
+Issue: Python script cannot find device
+
+Confirm USB debugging is enabled
+Check ADB recognizes device: adb devices
+Try specifying device ID explicitly in script
+Conclusion
+This lab demonstrated how to intercept and manipulate Android permission checks using Frida. You learned to:
+
+Identify permission-related methods in Android applications
+Create hooks to monitor and bypass permission checks
+Implement selective permission bypass strategies
+Automate permission testing with Python
+Log and analyze permission usage patterns
+Security Implications:
+
+Permission bypass vulnerabilities allow attackers to:
+
+Access sensitive device features without user consent
+Bypass security controls in applications
+Exfiltrate data from protected resources
+Perform unauthorized actions
+Defensive Measures:
+
+Developers should:
+
+Implement server-side permission validation
+Use certificate pinning and integrity checks
+Detect and prevent runtime manipulation
+Implement multiple layers of permission checks
+Monitor for suspicious permission patterns
+Next Steps:
+
+Explore custom permission implementations in applications
+Study anti-tampering and detection mechanisms
+Practice on real-world applications (with authorization)
+Develop automated security testing frameworks
+Research advanced Frida evasion techniques
+Remember: These techniques are for authorized security testing only. Unauthorized access to applications or devices is illegal and unethical.

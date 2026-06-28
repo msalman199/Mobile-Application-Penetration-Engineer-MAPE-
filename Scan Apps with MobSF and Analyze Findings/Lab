@@ -1,0 +1,511 @@
+Scan Apps with MobSF and Analyze Findings
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Mobile Security Framework (MobSF) for Android APK analysis
+Upload and scan Android applications using MobSF web interface and API
+Interpret security vulnerability findings from MobSF scan reports
+Automate batch scanning of multiple APK files using Python scripts
+Generate comprehensive security assessment reports based on scan results
+Prerequisites
+Before starting this lab, students should have:
+
+Basic Linux command line proficiency
+Understanding of Android application architecture and APK structure
+Familiarity with Python programming fundamentals
+Knowledge of common mobile security vulnerabilities (OWASP Mobile Top 10)
+Lab Environment
+Ready-to-Use Cloud Machines: Al Nafi provides Linux-based cloud machines for this lab. Simply click Start Lab to access your pre-configured environment.
+
+System Requirements:
+
+Ubuntu 20.04 LTS or later
+Minimum 4GB RAM, 20GB disk space
+Internet connectivity for tool installation
+Task 1: Install and Configure MobSF
+Step 1.1: Install System Dependencies
+Update your system and install required packages:
+
+# Update system packages
+sudo apt update && sudo apt upgrade -y
+
+# Install Python 3, pip, and dependencies
+sudo apt install python3 python3-pip python3-venv git wget openjdk-8-jdk -y
+
+# Verify Java installation
+java -version
+Step 1.2: Download and Setup MobSF
+Clone the MobSF repository and install dependencies:
+
+# Create directory and clone MobSF
+mkdir ~/security-tools && cd ~/security-tools
+git clone https://github.com/MobSF/Mobile-Security-Framework-MobSF.git
+cd Mobile-Security-Framework-MobSF
+
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+./setup.sh
+Step 1.3: Start MobSF Server
+Launch the MobSF web interface:
+
+# Start MobSF server (keep terminal open)
+python manage.py runserver 0.0.0.0:8000
+
+# In a new terminal, verify MobSF is running
+curl -I http://localhost:8000
+Expected Output: HTTP/1.1 200 OK
+
+Step 1.4: Download Sample APK Files
+Prepare vulnerable Android applications for testing:
+
+# Create APK samples directory
+mkdir ~/apk-samples && cd ~/apk-samples
+
+# Download DIVA (Damn Insecure and Vulnerable App)
+wget https://github.com/payatu/diva-android/releases/download/v1.0/diva-beta.apk
+
+# Download InsecureBankv2
+wget https://github.com/dineshshetty/Android-InsecureBankv2/releases/download/v1.0/InsecureBankv2.apk
+
+# Verify downloads
+ls -lh *.apk
+Task 2: Perform Static Analysis with MobSF
+Step 2.1: Upload APK via Web Interface
+Manual upload process:
+
+Open browser to http://localhost:8000
+Click Upload button
+Select diva-beta.apk from ~/apk-samples/
+Click Start Scan to begin analysis
+Wait for scan completion (2-5 minutes)
+Step 2.2: Create API Upload Script
+Develop a Python script to upload APKs programmatically:
+
+#!/usr/bin/env python3
+# File: mobsf_upload.py
+
+import requests
+import sys
+import os
+
+def upload_apk_to_mobsf(apk_path, mobsf_url="http://localhost:8000"):
+    """
+    Upload APK file to MobSF via API.
+    
+    Args:
+        apk_path: Path to the APK file
+        mobsf_url: MobSF server URL
+    
+    Returns:
+        Dictionary with upload results including file hash
+    """
+    # TODO: Check if APK file exists
+    # TODO: Prepare file for upload with proper MIME type
+    # TODO: Send POST request to /api/v1/upload endpoint
+    # TODO: Parse and return response JSON with hash
+    pass
+
+def start_scan(file_hash, mobsf_url="http://localhost:8000"):
+    """
+    Start static analysis scan for uploaded APK.
+    
+    Args:
+        file_hash: MD5 hash of uploaded file
+        mobsf_url: MobSF server URL
+    
+    Returns:
+        Boolean indicating scan start success
+    """
+    # TODO: Prepare scan request data with hash and scan_type
+    # TODO: Send POST request to /api/v1/scan endpoint
+    # TODO: Return success status
+    pass
+
+if __name__ == "__main__":
+    # TODO: Parse command line arguments
+    # TODO: Call upload_apk_to_mobsf function
+    # TODO: If successful, call start_scan with returned hash
+    pass
+Usage:
+
+chmod +x mobsf_upload.py
+python3 mobsf_upload.py diva-beta.apk
+Step 2.3: Monitor Scan Progress
+Create a script to check scan status:
+
+#!/usr/bin/env python3
+# File: monitor_scan.py
+
+import requests
+import time
+import sys
+
+def check_scan_status(file_hash, mobsf_url="http://localhost:8000"):
+    """
+    Check the current status of a scan.
+    
+    Args:
+        file_hash: MD5 hash of the scanned file
+        mobsf_url: MobSF server URL
+    
+    Returns:
+        String indicating scan status (completed, running, error)
+    """
+    # TODO: Send POST request to /api/v1/scan_status
+    # TODO: Parse response and return status
+    pass
+
+def wait_for_scan_completion(file_hash, timeout=300):
+    """
+    Poll scan status until completion or timeout.
+    
+    Args:
+        file_hash: MD5 hash of the scanned file
+        timeout: Maximum wait time in seconds
+    
+    Returns:
+        Boolean indicating if scan completed successfully
+    """
+    # TODO: Implement polling loop with timeout
+    # TODO: Check status every 10 seconds
+    # TODO: Return True when status is 'completed'
+    pass
+
+if __name__ == "__main__":
+    # TODO: Parse command line arguments for file hash
+    # TODO: Call wait_for_scan_completion
+    pass
+Task 3: Analyze Security Findings
+Step 3.1: Extract Scan Results via API
+Create a script to retrieve and analyze scan results:
+
+#!/usr/bin/env python3
+# File: extract_results.py
+
+import requests
+import json
+import sys
+from datetime import datetime
+
+def get_scan_results(file_hash, mobsf_url="http://localhost:8000"):
+    """
+    Retrieve detailed scan results from MobSF.
+    
+    Args:
+        file_hash: MD5 hash of the scanned file
+        mobsf_url: MobSF server URL
+    
+    Returns:
+        Dictionary containing complete scan results
+    """
+    # TODO: Send POST request to /api/v1/report_json
+    # TODO: Return parsed JSON response
+    pass
+
+def analyze_security_findings(results):
+    """
+    Analyze and display security findings from scan results.
+    
+    Args:
+        results: Dictionary containing scan results
+    
+    Displays:
+        - App information (name, package, version, SDK)
+        - Security score and level
+        - Permissions analysis (total, dangerous)
+        - Vulnerability counts by severity
+        - Top critical issues
+    """
+    # TODO: Extract and display app basic information
+    # TODO: Calculate and display security score/level
+    # TODO: Analyze permissions (dangerous vs normal)
+    # TODO: Categorize vulnerabilities by severity (high/medium/low)
+    # TODO: Display top 5 critical security issues
+    pass
+
+def save_results_to_file(results, filename):
+    """
+    Save scan results to JSON file.
+    
+    Args:
+        results: Dictionary containing scan results
+        filename: Output file path
+    """
+    # TODO: Write results to JSON file with proper formatting
+    pass
+
+if __name__ == "__main__":
+    # TODO: Parse command line arguments
+    # TODO: Get scan results using file hash
+    # TODO: Analyze and display findings
+    # TODO: Save results to timestamped JSON file
+    pass
+Step 3.2: Review Key Security Findings
+When analyzing MobSF results, focus on:
+
+Critical Areas:
+
+Security Score: Overall security rating (0-100)
+High Severity Issues: Immediate security risks requiring attention
+Dangerous Permissions: Permissions that access sensitive data/features
+Code Analysis: Hardcoded secrets, insecure cryptography, SQL injection
+Certificate Analysis: Signing certificate validity and strength
+Network Security: Cleartext traffic, SSL/TLS configuration
+Common Vulnerabilities in DIVA:
+
+Insecure data storage (SharedPreferences, SQLite)
+Hardcoded credentials and API keys
+Insecure communication (HTTP instead of HTTPS)
+Weak cryptographic implementations
+Input validation issues
+Insecure Android component exports
+Step 3.3: Generate HTML Security Report
+Create a comprehensive report generator:
+
+#!/usr/bin/env python3
+# File: generate_report.py
+
+import json
+import sys
+import os
+from datetime import datetime
+
+def generate_html_report(results, output_file):
+    """
+    Generate HTML security assessment report from scan results.
+    
+    Args:
+        results: Dictionary containing scan results
+        output_file: Path for output HTML file
+    
+    Report Sections:
+        - Executive summary with security score
+        - Application information table
+        - Vulnerability summary by severity
+        - Detailed findings for high-severity issues
+        - Permissions analysis
+        - Recommendations
+    """
+    # TODO: Create HTML template with CSS styling
+    # TODO: Extract key metrics from results
+    # TODO: Build vulnerability tables by severity
+    # TODO: Generate permissions analysis section
+    # TODO: Add security recommendations
+    # TODO: Write complete HTML to output file
+    pass
+
+def create_vulnerability_table(security_issues):
+    """
+    Create HTML table of vulnerabilities.
+    
+    Args:
+        security_issues: Dictionary of security findings
+    
+    Returns:
+        HTML string containing formatted vulnerability table
+    """
+    # TODO: Iterate through security issues
+    # TODO: Create table rows with severity, title, description
+    # TODO: Apply CSS classes based on severity
+    pass
+
+if __name__ == "__main__":
+    # TODO: Parse command line arguments for JSON input file
+    # TODO: Load JSON results
+    # TODO: Generate HTML report
+    # TODO: Display output file location
+    pass
+Task 4: Automate Batch Scanning
+Step 4.1: Create Batch Processing Script
+Develop a script to scan multiple APKs automatically:
+
+#!/usr/bin/env python3
+# File: batch_scan.py
+
+import os
+import sys
+import time
+import json
+import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+class MobSFBatchScanner:
+    """
+    Automated batch scanner for multiple APK files.
+    """
+    
+    def __init__(self, mobsf_url="http://localhost:8000", max_workers=3):
+        """
+        Initialize batch scanner.
+        
+        Args:
+            mobsf_url: MobSF server URL
+            max_workers: Maximum concurrent scans
+        """
+        self.mobsf_url = mobsf_url
+        self.max_workers = max_workers
+        self.results = {}
+    
+    def scan_apk(self, apk_path):
+        """
+        Upload and scan a single APK file.
+        
+        Args:
+            apk_path: Path to APK file
+        
+        Returns:
+            Dictionary with scan results and metadata
+        """
+        # TODO: Upload APK using API
+        # TODO: Start scan with returned hash
+        # TODO: Wait for scan completion
+        # TODO: Retrieve and return results
+        pass
+    
+    def scan_directory(self, directory_path):
+        """
+        Scan all APK files in a directory.
+        
+        Args:
+            directory_path: Path to directory containing APKs
+        
+        Returns:
+            Dictionary mapping APK names to scan results
+        """
+        # TODO: Find all .apk files in directory
+        # TODO: Use ThreadPoolExecutor for concurrent scanning
+        # TODO: Collect and return all results
+        pass
+    
+    def generate_summary_report(self, output_file):
+        """
+        Generate summary report for all scanned APKs.
+        
+        Args:
+            output_file: Path for output summary file
+        
+        Creates:
+            CSV or JSON file with comparative security metrics
+        """
+        # TODO: Extract key metrics from all scan results
+        # TODO: Create comparison table
+        # TODO: Write summary to file
+        pass
+
+if __name__ == "__main__":
+    # TODO: Parse command line arguments for directory path
+    # TODO: Initialize MobSFBatchScanner
+    # TODO: Scan all APKs in directory
+    # TODO: Generate summary report
+    pass
+Usage:
+
+chmod +x batch_scan.py
+python3 batch_scan.py ~/apk-samples
+Step 4.2: Create Comparison Report
+Generate a comparative analysis of multiple APKs:
+
+#!/usr/bin/env python3
+# File: compare_apks.py
+
+import json
+import sys
+import os
+
+def compare_security_scores(results_list):
+    """
+    Compare security scores across multiple APKs.
+    
+    Args:
+        results_list: List of scan result dictionaries
+    
+    Returns:
+        Sorted list of APKs by security score
+    """
+    # TODO: Extract app name and security score from each result
+    # TODO: Sort by security score (descending)
+    # TODO: Return formatted comparison data
+    pass
+
+def compare_vulnerabilities(results_list):
+    """
+    Compare vulnerability counts across APKs.
+    
+    Args:
+        results_list: List of scan result dictionaries
+    
+    Returns:
+        Dictionary with vulnerability statistics per APK
+    """
+    # TODO: Count vulnerabilities by severity for each APK
+    # TODO: Create comparison matrix
+    # TODO: Identify common vulnerabilities
+    pass
+
+def generate_comparison_report(results_dir, output_file):
+    """
+    Generate comprehensive comparison report.
+    
+    Args:
+        results_dir: Directory containing JSON result files
+        output_file: Path for output HTML report
+    """
+    # TODO: Load all JSON result files from directory
+    # TODO: Compare security scores
+    # TODO: Compare vulnerability counts
+    # TODO: Generate HTML comparison report
+    pass
+
+if __name__ == "__main__":
+    # TODO: Parse command line arguments
+    # TODO: Generate comparison report
+    pass
+Expected Outcomes
+After completing this lab, students should have:
+
+Functional MobSF installation capable of scanning Android APKs
+Working Python scripts for automated APK upload, scanning, and result extraction
+Security analysis reports identifying vulnerabilities in sample applications
+Batch processing capability for scanning multiple APKs efficiently
+Understanding of common mobile vulnerabilities and their security implications
+Key Findings from DIVA APK:
+
+Security Score: Typically 20-30/100 (Critical)
+High Severity Issues: 10-15 vulnerabilities
+Dangerous Permissions: 5-8 permissions
+Common Issues: Hardcoded secrets, insecure storage, weak crypto
+Troubleshooting Tips
+MobSF Server Won't Start:
+
+Verify Python virtual environment is activated
+Check port 8000 is not already in use: sudo lsof -i :8000
+Review logs in MobSF directory for error messages
+APK Upload Fails:
+
+Ensure APK file size is under 100MB
+Verify file is a valid APK (check with file command)
+Check MobSF server is running and accessible
+Scan Takes Too Long:
+
+Large APKs (>50MB) may take 5-10 minutes
+Check system resources (CPU, RAM) are sufficient
+Consider reducing concurrent scans in batch processing
+API Returns Empty Results:
+
+Verify scan has completed before requesting results
+Check file hash is correct (returned from upload)
+Ensure proper API endpoint URLs are used
+Conclusion
+This lab provided hands-on experience with Mobile Security Framework (MobSF) for automated Android application security analysis. Students learned to install and configure MobSF, perform static analysis on APK files, interpret security findings, and automate batch scanning processes. The skills developed enable systematic security assessment of mobile applications, identification of common vulnerabilities, and generation of comprehensive security reports. These capabilities are essential for mobile application security testing, secure development practices, and compliance with security standards.
+
+Next Steps:
+
+Scan production APKs from your organization
+Integrate MobSF into CI/CD pipelines
+Explore dynamic analysis capabilities
+Study OWASP Mobile Security Testing Guide
+Practice remediation of identified vulnerabilities

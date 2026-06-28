@@ -1,0 +1,423 @@
+Generate a MASVS Assessment Report
+Objectives
+By the end of this lab, students will be able to:
+
+Understand the OWASP Mobile Application Security Verification Standard (MASVS) framework
+Conduct static security analysis on Android APK files
+Develop Python scripts to automate security assessments
+Generate professional security assessment reports in Markdown format
+Document security findings using structured templates
+Prerequisites
+Basic Python programming knowledge
+Understanding of Android application structure
+Familiarity with Linux command line
+Basic security assessment concepts
+Knowledge of Markdown formatting
+Lab Environment
+Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Click Start Lab to access your pre-configured environment with all necessary tools installed.
+
+Task 1: Set Up MASVS Assessment Environment
+Step 1.1: Install Required Tools
+# Update system and install dependencies
+sudo apt update && sudo apt install -y python3 python3-pip python3-venv openjdk-11-jdk wget unzip
+
+# Create working directory
+mkdir -p ~/masvs-lab && cd ~/masvs-lab
+
+# Create Python virtual environment
+python3 -m venv masvs-env
+source masvs-env/bin/activate
+
+# Install Python packages
+pip install jinja2 xmltodict
+Step 1.2: Install APK Analysis Tools
+# Install APKTool
+wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool
+wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.7.0.jar
+chmod +x apktool
+sudo mv apktool /usr/local/bin/
+sudo mv apktool_2.7.0.jar /usr/local/bin/apktool.jar
+
+# Verify installation
+apktool --version
+Step 1.3: Download Sample Application
+# Create sample apps directory
+mkdir -p ~/masvs-lab/sample-apps
+cd ~/masvs-lab/sample-apps
+
+# Download DIVA (Damn Insecure and Vulnerable App)
+wget https://github.com/payatu/diva-android/raw/master/diva-beta.apk
+
+# Verify download
+file diva-beta.apk
+Task 2: Decompile and Analyze APK
+Step 2.1: Extract APK Contents
+# Create analysis directory
+mkdir -p ~/masvs-lab/analysis
+cd ~/masvs-lab/analysis
+
+# Decompile APK
+apktool d ~/masvs-lab/sample-apps/diva-beta.apk -o diva-decompiled
+
+# Examine structure
+cd diva-decompiled
+ls -la
+cat AndroidManifest.xml | head -20
+Step 2.2: Examine Key Security Files
+# View manifest permissions
+grep "uses-permission" AndroidManifest.xml
+
+# Check application flags
+grep "android:debuggable\|android:allowBackup" AndroidManifest.xml
+
+# List resources
+ls -la res/
+Task 3: Create MASVS Assessment Framework
+Step 3.1: Build Assessment Class Structure
+Create ~/masvs-lab/masvs_framework.py:
+
+#!/usr/bin/env python3
+import json
+import xml.etree.ElementTree as ET
+from datetime import datetime
+
+class MASVSAssessment:
+    '''
+    Framework for conducting MASVS security assessments.
+    '''
+    
+    def __init__(self, apk_path, app_name):
+        '''
+        Initialize assessment framework.
+        
+        Args:
+            apk_path: Path to APK file
+            app_name: Application name
+        '''
+        self.apk_path = apk_path
+        self.app_name = app_name
+        self.assessment_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.results = {}
+        
+        # TODO: Initialize MASVS categories (V1-V8)
+        # TODO: Create results structure for each category
+        pass
+    
+    def add_test_result(self, category, test_id, description, status, details=""):
+        '''
+        Add a test result to the assessment.
+        
+        Args:
+            category: MASVS category (V1-V8)
+            test_id: Test identifier
+            description: Test description
+            status: PASS, FAIL, or N/A
+            details: Additional details
+        '''
+        # TODO: Create test result dictionary
+        # TODO: Add to results structure
+        # TODO: Update category counters
+        pass
+    
+    def get_summary(self):
+        '''
+        Generate assessment summary statistics.
+        
+        Returns:
+            Dictionary with summary data
+        '''
+        # TODO: Calculate total tests
+        # TODO: Calculate pass/fail counts
+        # TODO: Calculate pass rate percentage
+        # TODO: Return summary dictionary
+        pass
+
+def check_manifest_permissions(manifest_path):
+    '''
+    Analyze AndroidManifest.xml for dangerous permissions.
+    
+    Args:
+        manifest_path: Path to AndroidManifest.xml
+    
+    Returns:
+        List of dangerous permissions found
+    '''
+    dangerous_permissions = [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_CONTACTS"
+    ]
+    
+    # TODO: Parse XML file
+    # TODO: Find all uses-permission elements
+    # TODO: Check against dangerous_permissions list
+    # TODO: Return list of found permissions
+    pass
+
+def check_debug_flag(manifest_path):
+    '''
+    Check if debuggable flag is enabled.
+    
+    Args:
+        manifest_path: Path to AndroidManifest.xml
+    
+    Returns:
+        Boolean indicating if debug is enabled
+    '''
+    # TODO: Parse manifest XML
+    # TODO: Find application element
+    # TODO: Check android:debuggable attribute
+    # TODO: Return True if enabled, False otherwise
+    pass
+
+def check_backup_flag(manifest_path):
+    '''
+    Check if backup is allowed.
+    
+    Args:
+        manifest_path: Path to AndroidManifest.xml
+    
+    Returns:
+        Boolean indicating if backup is allowed
+    '''
+    # TODO: Parse manifest XML
+    # TODO: Find application element
+    # TODO: Check android:allowBackup attribute
+    # TODO: Return True if allowed, False if disabled
+    pass
+Step 3.2: Create Assessment Execution Script
+Create ~/masvs-lab/perform_assessment.py:
+
+#!/usr/bin/env python3
+import sys
+import os
+import json
+
+# TODO: Import your masvs_framework module
+# TODO: Import assessment functions
+
+def perform_masvs_assessment():
+    '''
+    Execute complete MASVS assessment.
+    
+    Returns:
+        MASVSAssessment object with results
+    '''
+    # TODO: Set paths for APK and decompiled files
+    # TODO: Initialize MASVSAssessment object
+    
+    # V1: Architecture, Design and Threat Modeling
+    # TODO: Add test results for V1 category
+    
+    # V2: Data Storage and Privacy
+    # TODO: Check dangerous permissions
+    # TODO: Check backup configuration
+    # TODO: Add test results for V2 category
+    
+    # V3: Cryptography
+    # TODO: Check for hardcoded secrets
+    # TODO: Add test results for V3 category
+    
+    # V4: Authentication and Session Management
+    # TODO: Add test results (mark as N/A for static analysis)
+    
+    # V5: Network Communication
+    # TODO: Check network security configuration
+    # TODO: Add test results for V5 category
+    
+    # V6: Platform Interaction
+    # TODO: Add test results (mark as N/A for static analysis)
+    
+    # V7: Code Quality and Build Settings
+    # TODO: Check debug flag
+    # TODO: Add test results for V7 category
+    
+    # V8: Resilience Against Reverse Engineering
+    # TODO: Check for obfuscation
+    # TODO: Add test results for V8 category
+    
+    # TODO: Return assessment object
+    pass
+
+if __name__ == "__main__":
+    # TODO: Execute assessment
+    # TODO: Get summary statistics
+    # TODO: Print results to console
+    # TODO: Save results to JSON file
+    pass
+Step 3.3: Execute Assessment
+cd ~/masvs-lab
+source masvs-env/bin/activate
+
+# Run assessment
+python3 perform_assessment.py
+
+# View results
+cat assessment_results.json | python3 -m json.tool | head -50
+Task 4: Generate Professional Assessment Report
+Step 4.1: Create Report Generator
+Create ~/masvs-lab/report_generator.py:
+
+#!/usr/bin/env python3
+import json
+from datetime import datetime
+from jinja2 import Template
+
+def generate_markdown_report(results_file, output_file):
+    '''
+    Generate comprehensive MASVS assessment report.
+    
+    Args:
+        results_file: Path to JSON results file
+        output_file: Path for output Markdown file
+    
+    Returns:
+        Path to generated report
+    '''
+    # TODO: Load JSON results
+    
+    # TODO: Create Jinja2 template with sections:
+    # - Executive Summary
+    # - Assessment Overview
+    # - Key Findings
+    # - Detailed Results by Category
+    # - Risk Assessment Matrix
+    # - Recommendations (High/Medium/Low priority)
+    # - Compliance Status
+    # - Next Steps
+    # - Appendix
+    
+    # TODO: Render template with data
+    # TODO: Write to output file
+    # TODO: Return output file path
+    pass
+
+def create_html_report(markdown_file, html_file):
+    '''
+    Convert Markdown report to HTML.
+    
+    Args:
+        markdown_file: Path to Markdown file
+        html_file: Path for HTML output
+    '''
+    # TODO: Read Markdown content
+    # TODO: Add HTML wrapper with CSS styling
+    # TODO: Write HTML file
+    pass
+
+if __name__ == "__main__":
+    # TODO: Set file paths
+    # TODO: Generate Markdown report
+    # TODO: Generate HTML report
+    # TODO: Print success message
+    pass
+Step 4.2: Generate Reports
+# Generate Markdown report
+python3 report_generator.py
+
+# View report
+less MASVS_Assessment_Report.md
+
+# View in browser (if HTML generated)
+firefox MASVS_Assessment_Report.html &
+Step 4.3: Create Distribution Package
+Create ~/masvs-lab/package_report.py:
+
+#!/usr/bin/env python3
+import os
+import shutil
+import zipfile
+from datetime import datetime
+
+def create_assessment_package():
+    '''
+    Create distributable assessment package.
+    
+    Returns:
+        Path to ZIP package
+    '''
+    # TODO: Create package directory with timestamp
+    # TODO: Copy assessment artifacts:
+    #   - JSON results
+    #   - Markdown report
+    #   - HTML report
+    # TODO: Create README.md for package
+    # TODO: Create ZIP archive
+    # TODO: Return ZIP path
+    pass
+
+if __name__ == "__main__":
+    # TODO: Create package
+    # TODO: Print package details
+    pass
+Task 5: Validate and Review Results
+Step 5.1: Verify Assessment Completeness
+# Check all required files exist
+ls -la ~/masvs-lab/assessment_results.json
+ls -la ~/masvs-lab/MASVS_Assessment_Report.md
+
+# Verify JSON structure
+python3 -c "
+import json
+with open('assessment_results.json', 'r') as f:
+    data = json.load(f)
+    print(f'App: {data[\"app_name\"]}')
+    print(f'Tests: {data[\"summary\"][\"total_tests\"]}')
+    print(f'Pass Rate: {data[\"summary\"][\"pass_rate\"]}%')
+"
+Step 5.2: Review Key Findings
+# Extract failed tests
+python3 -c "
+import json
+with open('assessment_results.json', 'r') as f:
+    data = json.load(f)
+    print('FAILED TESTS:')
+    for cat, results in data['results'].items():
+        for test in results['tests']:
+            if test['status'] == 'FAIL':
+                print(f'{test[\"test_id\"]}: {test[\"description\"]}')
+"
+Step 5.3: Create Final Package
+# Run package script
+python3 package_report.py
+
+# Verify package
+ls -lh MASVS_Assessment_Package_*.zip
+
+# Extract and verify contents
+unzip -l MASVS_Assessment_Package_*.zip
+Expected Outcomes
+After completing this lab, you should have:
+
+Decompiled Android APK file with extracted resources
+Python-based MASVS assessment framework
+JSON file with structured assessment results
+Professional Markdown assessment report
+HTML version of the report for web viewing
+Distributable ZIP package with all artifacts
+Understanding of MASVS categories and testing methodology
+Troubleshooting Tips
+APKTool fails to decompile:
+
+Ensure Java is installed: java -version
+Try older APKTool version if current fails
+Check APK file integrity with file command
+Python import errors:
+
+Verify virtual environment is activated
+Reinstall packages: pip install --upgrade jinja2 xmltodict
+Check Python path: which python3
+XML parsing errors:
+
+Verify AndroidManifest.xml exists in decompiled directory
+Check file permissions: ls -la AndroidManifest.xml
+Use xmllint to validate XML structure
+Report generation fails:
+
+Ensure assessment was run first
+Verify JSON results file exists and is valid
+Check template syntax in report generator
+Conclusion
+This lab demonstrated how to conduct automated MASVS security assessments on Android applications. You learned to decompile APK files, analyze security configurations, implement Python-based assessment frameworks, and generate professional security reports. These skills are essential for mobile application security testing and compliance verification. The automated approach enables consistent, repeatable assessments that can be integrated into CI/CD pipelines for continuous security validation.

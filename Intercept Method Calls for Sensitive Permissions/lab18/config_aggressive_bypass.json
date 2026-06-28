@@ -1,0 +1,14 @@
+{
+    "bypass_permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_CONTACTS",
+        "android.permission.READ_SMS"
+    ],
+    "block_permissions": [
+        "android.permission.SEND_SMS",
+        "android.permission.CALL_PHONE"
+    ],
+    "log_all_checks": true
+}

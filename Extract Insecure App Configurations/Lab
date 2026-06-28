@@ -1,0 +1,541 @@
+Extract Insecure App Configurations
+Objectives
+By the end of this lab, students will be able to:
+
+Analyze AndroidManifest.xml files to identify security misconfigurations
+Extract hardcoded credentials from mobile application configuration files
+Develop Python scripts to automate security assessment of mobile apps
+Identify common mobile application security vulnerabilities
+Generate security assessment reports for mobile applications
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Android application architecture and XML structure
+Fundamental Python programming skills
+Familiarity with Linux command-line operations
+Basic knowledge of mobile application security concepts
+Lab Environment
+Al Nafi provides Linux-based cloud machines for this lab. Click Start Lab to access your pre-configured environment with all necessary tools pre-installed.
+
+Task 1: Analyze AndroidManifest.xml for Security Issues
+Step 1.1: Set Up Lab Directory Structure
+Create the working environment for mobile security analysis:
+
+# Create directory structure
+mkdir -p ~/mobile_security_lab/{apk_files,extracted_files,analysis_results,scripts}
+cd ~/mobile_security_lab
+Step 1.2: Create Sample AndroidManifest.xml
+Generate a sample manifest file with common security issues:
+
+cd ~/mobile_security_lab/extracted_files
+mkdir -p sample_app
+
+cat > sample_app/AndroidManifest.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.vulnerable.app"
+    android:versionCode="1"
+    android:versionName="1.0">
+    
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    
+    <application
+        android:allowBackup="true"
+        android:debuggable="true"
+        android:label="VulnerableApp">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <receiver
+            android:name=".InsecureReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.vulnerable.app.CUSTOM_ACTION" />
+            </intent-filter>
+        </receiver>
+        
+        <service
+            android:name=".BackgroundService"
+            android:exported="true" />
+            
+        <provider
+            android:name=".DataProvider"
+            android:authorities="com.vulnerable.app.provider"
+            android:exported="true"
+            android:grantUriPermissions="true" />
+            
+    </application>
+</manifest>
+EOF
+Step 1.3: Create Manifest Analyzer Script
+Develop a Python script to analyze AndroidManifest.xml files. Students must complete the implementation:
+
+cd ~/mobile_security_lab/scripts
+
+cat > manifest_analyzer.py << 'EOF'
+#!/usr/bin/env python3
+"""
+AndroidManifest.xml Security Analyzer
+TODO: Complete the implementation to analyze Android manifest files
+"""
+
+import xml.etree.ElementTree as ET
+import sys
+from datetime import datetime
+
+class ManifestAnalyzer:
+    def __init__(self, manifest_path):
+        self.manifest_path = manifest_path
+        self.vulnerabilities = []
+        self.warnings = []
+        
+    def analyze(self):
+        """
+        Main analysis function
+        TODO: Parse XML and call analysis methods
+        """
+        try:
+            tree = ET.parse(self.manifest_path)
+            root = tree.getroot()
+            
+            print(f"[+] Analyzing: {self.manifest_path}")
+            print("-" * 60)
+            
+            # TODO: Call analysis methods
+            self.check_debug_settings(root)
+            self.check_backup_settings(root)
+            self.check_permissions(root)
+            self.check_exported_components(root)
+            
+            self.generate_report()
+            
+        except Exception as e:
+            print(f"[-] Error: {e}")
+    
+    def check_debug_settings(self, root):
+        """
+        Check if debuggable is enabled
+        TODO: Find application element and check debuggable attribute
+        TODO: Add to vulnerabilities list if debuggable="true"
+        """
+        # TODO: Implement debug check
+        pass
+    
+    def check_backup_settings(self, root):
+        """
+        Check backup configuration
+        TODO: Check allowBackup attribute
+        TODO: Add finding if backup is enabled
+        """
+        # TODO: Implement backup check
+        pass
+    
+    def check_permissions(self, root):
+        """
+        Analyze requested permissions
+        TODO: Find all uses-permission elements
+        TODO: Identify dangerous permissions
+        TODO: Add warnings for sensitive permissions
+        """
+        dangerous_permissions = [
+            'android.permission.READ_EXTERNAL_STORAGE',
+            'android.permission.WRITE_EXTERNAL_STORAGE',
+            'android.permission.ACCESS_FINE_LOCATION',
+            'android.permission.CAMERA',
+            'android.permission.RECORD_AUDIO'
+        ]
+        
+        # TODO: Implement permission analysis
+        pass
+    
+    def check_exported_components(self, root):
+        """
+        Check for exported components
+        TODO: Find all activities, services, receivers, providers
+        TODO: Check if exported="true"
+        TODO: Add vulnerabilities for unprotected exported components
+        """
+        # TODO: Implement exported component check
+        pass
+    
+    def generate_report(self):
+        """
+        Generate analysis report
+        TODO: Display vulnerabilities and warnings
+        TODO: Save report to file
+        """
+        print("\n" + "=" * 60)
+        print("SECURITY ANALYSIS REPORT")
+        print("=" * 60)
+        
+        # TODO: Display critical vulnerabilities
+        # TODO: Display warnings
+        # TODO: Save to file
+        
+        print(f"\nTotal Issues: {len(self.vulnerabilities) + len(self.warnings)}")
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 manifest_analyzer.py <AndroidManifest.xml>")
+        sys.exit(1)
+    
+    analyzer = ManifestAnalyzer(sys.argv[1])
+    analyzer.analyze()
+
+if __name__ == "__main__":
+    main()
+EOF
+
+chmod +x manifest_analyzer.py
+Step 1.4: Test the Analyzer
+Run the analyzer on the sample manifest:
+
+python3 manifest_analyzer.py ../extracted_files/sample_app/AndroidManifest.xml
+Task 2: Extract Hardcoded Credentials
+Step 2.1: Create Sample Configuration Files
+Generate configuration files with hardcoded credentials:
+
+cd ~/mobile_security_lab/extracted_files/sample_app
+mkdir -p res/values assets
+
+# Create strings.xml with credentials
+cat > res/values/strings.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VulnerableApp</string>
+    <string name="api_key">AIzaSyBvOkBwN5UbAeMbXr9d8Hi9E4FMRkJp4Qg</string>
+    <string name="database_password">admin123</string>
+    <string name="secret_token">sk_test_4eC39HqLyjWDarjtT1zdp7dc</string>
+    <string name="aws_access_key">AKIAIOSFODNN7EXAMPLE</string>
+    <string name="server_url">https://api.example.com</string>
+</resources>
+EOF
+
+# Create config.properties
+cat > assets/config.properties << 'EOF'
+app.version=1.0.0
+db.host=192.168.1.100
+db.username=root
+db.password=password123
+api.endpoint=https://api.vulnerable-app.com
+api.key=pk_live_51H7z2bKuuiPiaoK8vKjCx3OqFd4gmCTy
+firebase.api_key=AIzaSyDdVgKwhZl-yyuK4o1T3WAlrXaFjMjlTkM
+encryption.key=ThisIsAVerySecretKey123
+EOF
+
+# Create JSON config
+cat > assets/app_config.json << 'EOF'
+{
+    "credentials": {
+        "admin_user": "admin",
+        "admin_pass": "admin123"
+    },
+    "api_keys": {
+        "google_maps": "AIzaSyBvOkBwN5UbAeMbXr9d8Hi9E4FMRkJp4Qg",
+        "payment_gateway": "pk_test_TYooMQauvdEDq54NiTphI7jx"
+    },
+    "database": {
+        "host": "db.vulnerable-app.com",
+        "username": "dbuser",
+        "password": "dbpass123"
+    }
+}
+EOF
+Step 2.2: Create Credential Extraction Script
+Develop a script to extract credentials. Students complete the implementation:
+
+cd ~/mobile_security_lab/scripts
+
+cat > credential_extractor.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Mobile App Credential Extractor
+TODO: Complete implementation to extract hardcoded credentials
+"""
+
+import os
+import re
+import json
+import xml.etree.ElementTree as ET
+from datetime import datetime
+
+class CredentialExtractor:
+    def __init__(self, app_directory):
+        self.app_directory = app_directory
+        self.findings = []
+        
+        # Credential patterns
+        self.patterns = {
+            'API_KEY': r'AIza[0-9A-Za-z-_]{35}',
+            'STRIPE_KEY': r'[sp]k_(live|test)_[0-9a-zA-Z]{24}',
+            'AWS_KEY': r'AKIA[0-9A-Z]{16}',
+            'PASSWORD': r'password["\s]*[:=]["\s]*[^"\s]+',
+        }
+        
+        self.credential_keywords = [
+            'password', 'passwd', 'secret', 'key', 'token', 
+            'auth', 'credential', 'api_key', 'access_key'
+        ]
+    
+    def extract_all_credentials(self):
+        """
+        Main extraction function
+        TODO: Process all file types
+        """
+        print(f"[+] Extracting credentials from: {self.app_directory}")
+        
+        # TODO: Call processing methods
+        self.process_xml_files()
+        self.process_properties_files()
+        self.process_json_files()
+        
+        self.generate_report()
+    
+    def process_xml_files(self):
+        """
+        Process XML files
+        TODO: Walk directory tree
+        TODO: Find and analyze .xml files
+        """
+        print("[*] Processing XML files...")
+        
+        # TODO: Implement XML processing
+        pass
+    
+    def analyze_xml_file(self, file_path):
+        """
+        Analyze individual XML file
+        TODO: Parse XML
+        TODO: Check string resources for credentials
+        TODO: Add findings to list
+        """
+        # TODO: Implement XML analysis
+        pass
+    
+    def process_properties_files(self):
+        """
+        Process .properties files
+        TODO: Find .properties files
+        TODO: Parse key-value pairs
+        TODO: Check for credential patterns
+        """
+        print("[*] Processing Properties files...")
+        
+        # TODO: Implement properties processing
+        pass
+    
+    def process_json_files(self):
+        """
+        Process JSON files
+        TODO: Find .json files
+        TODO: Parse JSON content
+        TODO: Recursively check for credentials
+        """
+        print("[*] Processing JSON files...")
+        
+        # TODO: Implement JSON processing
+        pass
+    
+    def is_suspicious_credential(self, key, value):
+        """
+        Check if key-value pair contains credentials
+        TODO: Check key against credential keywords
+        TODO: Check value against regex patterns
+        TODO: Return True if suspicious
+        """
+        # TODO: Implement credential detection logic
+        return False
+    
+    def assess_severity(self, key, value):
+        """
+        Assess severity of finding
+        TODO: Return CRITICAL, HIGH, MEDIUM, or LOW
+        """
+        # TODO: Implement severity assessment
+        return "MEDIUM"
+    
+    def generate_report(self):
+        """
+        Generate extraction report
+        TODO: Display all findings
+        TODO: Group by severity
+        TODO: Save to file
+        """
+        print("\n" + "=" * 60)
+        print("CREDENTIAL EXTRACTION REPORT")
+        print("=" * 60)
+        
+        # TODO: Display findings by severity
+        # TODO: Save report to file
+        
+        print(f"\nTotal Findings: {len(self.findings)}")
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 credential_extractor.py <app_directory>")
+        sys.exit(1)
+    
+    extractor = CredentialExtractor(sys.argv[1])
+    extractor.extract_all_credentials()
+
+if __name__ == "__main__":
+    main()
+EOF
+
+chmod +x credential_extractor.py
+Step 2.3: Run Credential Extraction
+Execute the extractor on sample files:
+
+python3 credential_extractor.py ../extracted_files/sample_app
+Task 3: Automated Security Assessment
+Step 3.1: Create Comprehensive Security Scanner
+Develop a unified scanner combining both analyses:
+
+cd ~/mobile_security_lab/scripts
+
+cat > mobile_security_scanner.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Comprehensive Mobile Security Scanner
+TODO: Combine manifest analysis and credential extraction
+"""
+
+import sys
+import os
+from datetime import datetime
+
+class MobileSecurityScanner:
+    def __init__(self, app_path):
+        self.app_path = app_path
+        self.manifest_issues = []
+        self.credential_findings = []
+        
+    def scan(self):
+        """
+        Perform comprehensive security scan
+        TODO: Run manifest analysis
+        TODO: Run credential extraction
+        TODO: Generate combined report
+        """
+        print("[+] Starting comprehensive security scan")
+        print(f"[+] Target: {self.app_path}")
+        print("-" * 60)
+        
+        # TODO: Implement scanning logic
+        self.scan_manifest()
+        self.scan_credentials()
+        self.generate_comprehensive_report()
+    
+    def scan_manifest(self):
+        """
+        Scan AndroidManifest.xml
+        TODO: Find manifest file
+        TODO: Run manifest analyzer
+        TODO: Store results
+        """
+        # TODO: Implement manifest scanning
+        pass
+    
+    def scan_credentials(self):
+        """
+        Scan for hardcoded credentials
+        TODO: Run credential extractor
+        TODO: Store results
+        """
+        # TODO: Implement credential scanning
+        pass
+    
+    def generate_comprehensive_report(self):
+        """
+        Generate comprehensive security report
+        TODO: Combine all findings
+        TODO: Calculate risk score
+        TODO: Provide recommendations
+        TODO: Save detailed report
+        """
+        print("\n" + "=" * 60)
+        print("COMPREHENSIVE SECURITY ASSESSMENT")
+        print("=" * 60)
+        
+        # TODO: Display combined results
+        # TODO: Calculate overall risk score
+        # TODO: Save comprehensive report
+        
+        print("\n[+] Scan complete")
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 mobile_security_scanner.py <app_directory>")
+        sys.exit(1)
+    
+    scanner = MobileSecurityScanner(sys.argv[1])
+    scanner.scan()
+
+if __name__ == "__main__":
+    main()
+EOF
+
+chmod +x mobile_security_scanner.py
+Step 3.2: Run Comprehensive Scan
+Execute the complete security assessment:
+
+python3 mobile_security_scanner.py ../extracted_files/sample_app
+Step 3.3: Review Generated Reports
+Check the analysis results directory:
+
+cd ~/mobile_security_lab/analysis_results
+ls -lh
+cat manifest_analysis_*.txt
+Expected Outcomes
+After completing this lab, students should have:
+
+Functional Python scripts for analyzing AndroidManifest.xml files
+Working credential extraction tools for mobile applications
+Understanding of common mobile security misconfigurations
+Generated security assessment reports identifying vulnerabilities
+Knowledge of automated security testing approaches
+Key findings should include:
+
+Debuggable applications in production
+Backup enabled allowing data extraction
+Exported components without proper protection
+Hardcoded API keys and credentials
+Sensitive permissions without justification
+Troubleshooting Tips
+Issue: XML parsing errors
+
+Verify XML file is well-formed and properly encoded
+Check for special characters that need escaping
+Ensure file path is correct and accessible
+Issue: No credentials detected
+
+Verify regex patterns match credential formats
+Check file encoding (use UTF-8)
+Ensure search is recursive through all subdirectories
+Issue: Script execution errors
+
+Confirm Python 3 is installed: python3 --version
+Install missing modules: pip3 install lxml
+Check file permissions: chmod +x script.py
+Conclusion
+This lab demonstrated mobile application security assessment techniques focusing on configuration analysis and credential extraction. Students learned to identify common security misconfigurations in AndroidManifest.xml files and extract hardcoded sensitive data from configuration files.
+
+Key takeaways:
+
+Mobile apps frequently contain hardcoded credentials and API keys
+AndroidManifest.xml misconfigurations expose apps to security risks
+Automated tools significantly improve security assessment efficiency
+Regular security audits are essential for mobile application security
+Proper credential management and secure configuration practices are critical
+These skills are fundamental for mobile application security testing and vulnerability assessment in real-world scenarios.

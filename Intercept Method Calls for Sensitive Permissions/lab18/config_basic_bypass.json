@@ -1,0 +1,9 @@
+{
+    "bypass_permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE"
+    ],
+    "block_permissions": [],
+    "log_all_checks": true
+}

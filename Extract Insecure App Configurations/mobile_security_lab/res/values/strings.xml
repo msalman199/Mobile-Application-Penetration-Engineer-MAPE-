@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VulnerableApp</string>
+    <string name="api_key">AIzaSyBvOkBwN5UbAeMbXr9d8Hi9E4FMRkJp4Qg</string>
+    <string name="database_password">admin123</string>
+    <string name="secret_token">sk_test_4eC39HqLyjWDarjtT1zdp7dc</string>
+    <string name="aws_access_key">AKIAIOSFODNN7EXAMPLE</string>
+    <string name="server_url">https://api.example.com</string>
+</resources>

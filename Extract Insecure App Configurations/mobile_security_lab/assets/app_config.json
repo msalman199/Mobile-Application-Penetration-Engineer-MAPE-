@@ -1,0 +1,15 @@
+{
+    "credentials": {
+        "admin_user": "admin",
+        "admin_pass": "admin123"
+    },
+    "api_keys": {
+        "google_maps": "AIzaSyBvOkBwN5UbAeMbXr9d8Hi9E4FMRkJp4Qg",
+        "payment_gateway": "pk_test_TYooMQauvdEDq54NiTphI7jx"
+    },
+    "database": {
+        "host": "db.vulnerable-app.com",
+        "username": "dbuser",
+        "password": "dbpass123"
+    }
+}

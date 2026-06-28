@@ -1,0 +1,491 @@
+Reverse Engineer APK Using JADX + APKTool
+Objectives
+By the end of this lab, students will be able to:
+
+Decompile Android APK files using APKTool to extract resources and manifest files
+Analyze Java source code from APK files using JADX
+Identify common security vulnerabilities in Android applications
+Automate APK analysis using Python scripts
+Generate comprehensive security assessment reports
+Prerequisites
+Basic understanding of Android application architecture
+Familiarity with Java programming language
+Knowledge of Linux command-line operations
+Basic Python programming skills
+Understanding of mobile application security concepts
+Lab Environment Setup
+Al Nafi Cloud Machine: This lab runs on Al Nafi's provided Linux-based cloud machines. Click Start Lab to access your pre-configured environment.
+
+Your cloud machine includes:
+
+Ubuntu 22.04 LTS
+Java Development Kit (JDK 11)
+Python 3.10
+APKTool and JADX pre-installed
+Task 1: Decompile APK with APKTool
+Step 1.1: Setup Working Environment
+Create organized directories for the analysis workflow:
+
+# Create directory structure
+mkdir -p ~/apk-analysis/{apk-files,decompiled-output,jadx-output,reports}
+cd ~/apk-analysis
+
+# Verify APKTool installation
+apktool --version
+Step 1.2: Download Sample APK
+Download a vulnerable Android application for analysis:
+
+# Download DIVA (Damn Insecure and Vulnerable App)
+cd ~/apk-analysis/apk-files
+wget https://github.com/payatu/diva-android/raw/master/diva-beta.apk
+
+# Verify download
+ls -lh diva-beta.apk
+file diva-beta.apk
+Step 1.3: Extract APK Information
+Gather basic metadata before decompilation:
+
+# Extract APK metadata
+aapt dump badging diva-beta.apk | grep -E "package|application-label|sdkVersion"
+
+# View APK structure
+unzip -l diva-beta.apk | head -20
+Step 1.4: Decompile with APKTool
+Use APKTool to extract resources and Smali code:
+
+# Decompile APK
+cd ~/apk-analysis/decompiled-output
+apktool d ../apk-files/diva-beta.apk -o diva-decompiled
+
+# Explore structure
+cd diva-decompiled
+tree -L 2
+Step 1.5: Analyze AndroidManifest.xml
+Examine the manifest for security configurations:
+
+# View manifest
+cat AndroidManifest.xml
+
+# Extract permissions
+grep "uses-permission" AndroidManifest.xml
+
+# Find exported components
+grep -E "exported.*true" AndroidManifest.xml
+
+# Check debug flag
+grep "debuggable" AndroidManifest.xml
+Key Analysis Points:
+
+Dangerous permissions (STORAGE, LOCATION, CAMERA)
+Exported activities/services without proper protection
+Debug flag enabled in production builds
+Backup settings and network security configuration
+Task 2: Analyze Code with JADX
+Step 2.1: Decompile to Java Source
+Convert DEX bytecode to readable Java code:
+
+# Create JADX output directory
+cd ~/apk-analysis/jadx-output
+
+# Decompile with JADX
+jadx -d jadx-diva-output ~/apk-analysis/apk-files/diva-beta.apk
+
+# Verify output
+ls -la jadx-diva-output/
+tree jadx-diva-output/sources -L 3
+Step 2.2: Navigate Source Code
+Explore the decompiled Java source structure:
+
+# Navigate to sources
+cd jadx-diva-output/sources
+
+# Find main package
+find . -name "*.java" | head -10
+
+# List activity files
+find . -name "*Activity*.java"
+Step 2.3: Search for Security Issues
+Use grep to identify common vulnerabilities:
+
+# Search for hardcoded credentials
+grep -rn -i "password\s*=\|secret\s*=\|key\s*=" . --include="*.java"
+
+# Find SQL operations (potential injection)
+grep -rn "SELECT\|INSERT\|UPDATE\|DELETE" . --include="*.java" | grep "+"
+
+# Locate file operations
+grep -rn "openFileOutput\|getSharedPreferences" . --include="*.java"
+
+# Find network operations
+grep -rn "http://\|HttpURLConnection" . --include="*.java"
+
+# Check for weak crypto
+grep -rn "DES\|MD5\|SHA1" . --include="*.java"
+Step 2.4: Analyze Specific Vulnerabilities
+Examine MainActivity and other critical files:
+
+# View MainActivity
+find . -name "MainActivity.java" -exec cat {} \;
+
+# Search for insecure storage
+grep -rn "MODE_WORLD_READABLE\|MODE_WORLD_WRITABLE" . --include="*.java"
+
+# Find WebView configurations
+grep -rn "setJavaScriptEnabled\|addJavascriptInterface" . --include="*.java"
+Task 3: Automate Analysis with Python
+Step 3.1: Create APK Analyzer Script
+Build a Python script to automate the analysis process. Students must complete the implementation:
+
+#!/usr/bin/env python3
+"""
+APK Security Analyzer
+Automates APK decompilation and vulnerability scanning
+"""
+
+import os
+import subprocess
+import re
+import json
+import hashlib
+from datetime import datetime
+
+class APKAnalyzer:
+    def __init__(self, apk_path):
+        """
+        Initialize the APK analyzer
+        
+        Args:
+            apk_path: Path to the APK file to analyze
+        """
+        self.apk_path = apk_path
+        self.apk_name = os.path.basename(apk_path)
+        self.results = {
+            'apk_info': {},
+            'permissions': [],
+            'vulnerabilities': [],
+            'analysis_date': datetime.now().isoformat()
+        }
+    
+    def calculate_hash(self):
+        """
+        Calculate SHA256 hash of the APK file
+        
+        TODO: Implement hash calculation
+        - Read file in chunks
+        - Update hash with each chunk
+        - Store result in self.results['file_hash']
+        """
+        pass
+    
+    def extract_apk_info(self):
+        """
+        Extract basic APK information using aapt
+        
+        TODO: Implement APK info extraction
+        - Run aapt dump badging command
+        - Parse package name, version, and app name
+        - Store in self.results['apk_info']
+        """
+        pass
+    
+    def decompile_with_apktool(self):
+        """
+        Decompile APK using APKTool
+        
+        TODO: Implement APKTool decompilation
+        - Create output directory
+        - Run apktool command
+        - Return output directory path
+        """
+        pass
+    
+    def analyze_manifest(self, decompiled_dir):
+        """
+        Analyze AndroidManifest.xml for security issues
+        
+        TODO: Implement manifest analysis
+        - Read AndroidManifest.xml
+        - Extract permissions using regex
+        - Find exported components
+        - Check for debug flag
+        - Identify dangerous permissions
+        """
+        pass
+    
+    def decompile_with_jadx(self):
+        """
+        Decompile APK using JADX
+        
+        TODO: Implement JADX decompilation
+        - Create output directory
+        - Run jadx command
+        - Return output directory path
+        """
+        pass
+    
+    def scan_vulnerabilities(self, jadx_dir):
+        """
+        Scan Java source code for vulnerabilities
+        
+        TODO: Implement vulnerability scanning
+        - Define vulnerability patterns (SQL injection, hardcoded secrets, etc.)
+        - Walk through Java files
+        - Search for patterns using regex
+        - Store findings in self.results['vulnerabilities']
+        """
+        vulnerability_patterns = {
+            'Hardcoded Credentials': r'password\s*=\s*["\'][^"\']+["\']',
+            'SQL Injection': r'SELECT.*\+.*',
+            'Weak Crypto': r'DES\(|MD5\(|SHA1\(',
+            # TODO: Add more patterns
+        }
+        pass
+    
+    def generate_json_report(self):
+        """
+        Generate JSON report
+        
+        TODO: Implement JSON report generation
+        - Create reports directory
+        - Write self.results to JSON file
+        - Return report path
+        """
+        pass
+    
+    def generate_html_report(self):
+        """
+        Generate HTML report for better readability
+        
+        TODO: Implement HTML report generation
+        - Create HTML template
+        - Populate with analysis results
+        - Include vulnerability details
+        - Save to reports directory
+        """
+        pass
+    
+    def run_analysis(self):
+        """
+        Execute complete APK analysis workflow
+        
+        TODO: Implement analysis workflow
+        - Calculate hash
+        - Extract APK info
+        - Decompile with APKTool
+        - Analyze manifest
+        - Decompile with JADX
+        - Scan vulnerabilities
+        - Generate reports
+        """
+        pass
+
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) != 2:
+        print("Usage: python3 apk_analyzer.py <path_to_apk>")
+        sys.exit(1)
+    
+    # TODO: Create analyzer instance and run analysis
+    pass
+Save this as ~/apk-analysis/apk_analyzer.py and make it executable:
+
+chmod +x ~/apk-analysis/apk_analyzer.py
+Step 3.2: Create String Analyzer Utility
+Build a utility to extract interesting strings from decompiled code:
+
+#!/usr/bin/env python3
+"""
+String Analyzer for APK Analysis
+Extracts URLs, IPs, emails, and other interesting strings
+"""
+
+import os
+import re
+import sys
+
+class StringAnalyzer:
+    def __init__(self, sources_dir):
+        """
+        Initialize string analyzer
+        
+        Args:
+            sources_dir: Path to JADX sources directory
+        """
+        self.sources_dir = sources_dir
+        self.findings = {}
+    
+    def analyze_strings(self):
+        """
+        Analyze strings in Java source files
+        
+        TODO: Implement string analysis
+        - Define regex patterns for URLs, IPs, emails, API keys
+        - Walk through Java files
+        - Search for patterns
+        - Store findings by category
+        """
+        patterns = {
+            'URLs': r'https?://[^\s\'"]+',
+            'IP Addresses': r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b',
+            'Email Addresses': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+            # TODO: Add more patterns
+        }
+        pass
+    
+    def generate_report(self):
+        """
+        Generate string analysis report
+        
+        TODO: Implement report generation
+        - Print findings by category
+        - Remove duplicates
+        - Show file locations
+        """
+        pass
+
+if __name__ == "__main__":
+    # TODO: Implement main execution
+    pass
+Save as ~/apk-analysis/string_analyzer.py.
+
+Step 3.3: Create Vulnerability Scanner
+Build a focused scanner for common Android vulnerabilities:
+
+#!/usr/bin/env python3
+"""
+Vulnerability Scanner for Android APK Analysis
+"""
+
+import os
+import re
+import sys
+import json
+
+class VulnerabilityScanner:
+    def __init__(self, sources_dir):
+        """
+        Initialize vulnerability scanner
+        
+        Args:
+            sources_dir: Path to decompiled Java sources
+        """
+        self.sources_dir = sources_dir
+        self.vulnerabilities = []
+    
+    def scan_file(self, file_path):
+        """
+        Scan a single Java file for vulnerabilities
+        
+        TODO: Implement file scanning
+        - Read file content
+        - Apply vulnerability patterns
+        - Record findings with line numbers
+        """
+        pass
+    
+    def scan_all_files(self):
+        """
+        Scan all Java files in sources directory
+        
+        TODO: Implement recursive scanning
+        - Walk through directory tree
+        - Process each .java file
+        - Collect all vulnerabilities
+        """
+        pass
+    
+    def generate_report(self):
+        """
+        Generate vulnerability report
+        
+        TODO: Implement report generation
+        - Group by severity
+        - Show file locations
+        - Include code snippets
+        """
+        pass
+
+if __name__ == "__main__":
+    # TODO: Implement main execution
+    pass
+Save as ~/apk-analysis/vulnerability_scanner.py.
+
+Step 3.4: Execute Automated Analysis
+Run your completed scripts:
+
+# Run main analyzer
+cd ~/apk-analysis
+python3 apk_analyzer.py apk-files/diva-beta.apk
+
+# Run string analyzer
+python3 string_analyzer.py jadx-output/jadx-diva-output/sources
+
+# Run vulnerability scanner
+python3 vulnerability_scanner.py jadx-output/jadx-diva-output/sources
+Step 3.5: Review Generated Reports
+Examine the analysis results:
+
+# View JSON report
+cd ~/apk-analysis/reports
+cat analysis_report_*.json | jq '.'
+
+# Open HTML report in browser
+firefox analysis_report_*.html &
+Expected Outcomes
+After completing this lab, you should have:
+
+Decompiled APK Structure: Complete extraction of resources, manifest, and Smali code
+Java Source Code: Readable Java source from JADX decompilation
+Security Findings: Identified vulnerabilities including:
+Hardcoded credentials
+SQL injection points
+Insecure file operations
+Weak cryptography usage
+Dangerous permissions
+Automated Tools: Working Python scripts for APK analysis
+Comprehensive Reports: JSON and HTML reports documenting findings
+Sample Vulnerabilities in DIVA APK:
+
+Insecure data storage in SharedPreferences
+Hardcoded vendor key
+SQL injection in local database operations
+Insecure file permissions
+Weak input validation
+Troubleshooting Tips
+Issue: APKTool fails with "brut.androlib.AndrolibException"
+
+Solution: Update APKTool to latest version or use -r flag to skip resource decoding
+Issue: JADX produces unreadable code
+
+Solution: Try --deobf flag for obfuscated APKs or use alternative decompilers
+Issue: Python script fails with encoding errors
+
+Solution: Add encoding='utf-8', errors='ignore' when reading files
+Issue: Cannot find specific vulnerability patterns
+
+Solution: Obfuscated code may hide patterns; try searching for method signatures instead
+Issue: Reports directory permission denied
+
+Solution: Ensure directory exists and has write permissions: mkdir -p reports && chmod 755 reports
+Conclusion
+This lab introduced Android APK reverse engineering using industry-standard tools. You learned to:
+
+Decompile APKs using APKTool for resource extraction
+Analyze Java source code with JADX
+Identify common security vulnerabilities manually and programmatically
+Automate analysis workflows with Python
+Generate professional security assessment reports
+Key Takeaways:
+
+APKTool extracts resources and manifest; JADX provides readable Java code
+AndroidManifest.xml reveals permissions and exported components
+Automated scanning improves efficiency but manual review is essential
+Combining multiple tools provides comprehensive analysis
+Next Steps:
+
+Analyze real-world applications from Google Play Store
+Study obfuscation techniques and how to bypass them
+Learn dynamic analysis with tools like Frida
+Practice responsible disclosure for discovered vulnerabilities
+Security Note: Only analyze applications you own or have explicit permission to test. Unauthorized reverse engineering may violate terms of service or laws.

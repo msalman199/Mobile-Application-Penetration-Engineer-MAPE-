@@ -1,0 +1,431 @@
+ Evaluate Crypto Libraries (AES in ECB Mode)
+Objectives
+By the end of this lab, students will be able to:
+
+Identify insecure cryptographic implementations in Android applications
+Understand vulnerabilities of AES in ECB (Electronic Codebook) mode
+Analyze encryption patterns that reveal security weaknesses
+Automate cryptographic vulnerability detection
+Recommend secure alternatives to weak encryption methods
+Prerequisites
+Basic understanding of symmetric encryption (AES)
+Familiarity with Python programming
+Knowledge of Linux command-line operations
+Understanding of Android APK structure
+Lab Environment
+Al Nafi provides Linux-based cloud machines with pre-installed tools including Python 3, apktool, and necessary cryptographic libraries. Click Start Lab to access your environment.
+
+Task 1: Identify Insecure Cryptographic Implementations
+Step 1: Set Up Working Directory
+mkdir -p ~/crypto-lab/{apk-files,extracted-apk,scripts,results}
+cd ~/crypto-lab
+Step 2: Create Cryptographic Pattern Scanner
+Create scripts/crypto_scanner.py:
+
+#!/usr/bin/env python3
+import os
+import re
+import sys
+
+def scan_crypto_patterns(directory):
+    """
+    Scan directory for cryptographic patterns in source files.
+    
+    Args:
+        directory: Path to extracted APK directory
+    
+    Returns:
+        List of findings with file paths and matched patterns
+    """
+    crypto_patterns = {
+        'AES_ECB': r'AES/ECB',
+        'HARDCODED_KEY': r'["\']([A-Za-z0-9]{16,})["\']',
+        'CIPHER_INSTANCE': r'Cipher\.getInstance\(["\']([^"\']+)["\']',
+        'WEAK_ALGORITHM': r'DES|3DES|RC4|MD5'
+    }
+    
+    findings = []
+    
+    # TODO: Walk through directory tree
+    # TODO: Read files with extensions: .java, .smali, .xml
+    # TODO: Search for each pattern using regex
+    # TODO: Store matches with file path and line numbers
+    # TODO: Return findings list
+    
+    return findings
+
+def generate_report(findings):
+    """
+    Generate security report from findings.
+    
+    Args:
+        findings: List of vulnerability findings
+    """
+    # TODO: Group findings by pattern type
+    # TODO: Count occurrences of each vulnerability
+    # TODO: Print formatted report with severity levels
+    # TODO: Add security recommendations
+    pass
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python3 crypto_scanner.py <directory>")
+        sys.exit(1)
+    
+    directory = sys.argv[1]
+    findings = scan_crypto_patterns(directory)
+    generate_report(findings)
+Step 3: Extract and Analyze Sample APK
+# Download sample vulnerable APK (provided in lab environment)
+cd ~/crypto-lab/apk-files
+
+# Extract APK contents
+apktool d sample-vulnerable-app.apk -o ../extracted-apk/vulnerable-app
+
+# Run scanner
+cd ~/crypto-lab/scripts
+chmod +x crypto_scanner.py
+python3 crypto_scanner.py ../extracted-apk/vulnerable-app > ../results/scan_results.txt
+Step 4: Review Findings
+cat ~/crypto-lab/results/scan_results.txt
+Expected patterns to identify:
+
+AES/ECB/PKCS5Padding usage
+Hardcoded encryption keys
+Weak cryptographic algorithms
+Missing initialization vectors
+Task 2: Demonstrate ECB Mode Vulnerabilities
+Step 1: Install Cryptographic Library
+pip3 install pycryptodome
+Step 2: Create ECB Vulnerability Demonstrator
+Create scripts/ecb_demo.py:
+
+#!/usr/bin/env python3
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import base64
+
+class ECBVulnerabilityDemo:
+    def __init__(self, key):
+        """
+        Initialize with encryption key.
+        
+        Args:
+            key: 16-byte encryption key
+        """
+        self.key = key
+    
+    def encrypt_ecb(self, plaintext):
+        """
+        Encrypt plaintext using AES-ECB mode.
+        
+        Args:
+            plaintext: String to encrypt
+        
+        Returns:
+            Base64-encoded ciphertext
+        """
+        # TODO: Create AES cipher in ECB mode
+        # TODO: Pad plaintext to block size (16 bytes)
+        # TODO: Encrypt padded plaintext
+        # TODO: Return base64-encoded result
+        pass
+    
+    def decrypt_ecb(self, ciphertext):
+        """
+        Decrypt ciphertext using AES-ECB mode.
+        
+        Args:
+            ciphertext: Base64-encoded encrypted data
+        
+        Returns:
+            Decrypted plaintext string
+        """
+        # TODO: Decode base64 ciphertext
+        # TODO: Create AES cipher in ECB mode
+        # TODO: Decrypt and unpad
+        # TODO: Return plaintext
+        pass
+    
+    def demonstrate_pattern_weakness(self):
+        """
+        Show how ECB preserves patterns in plaintext.
+        """
+        test_cases = [
+            "REPEATEDBLOCK___REPEATEDBLOCK___",  # Identical blocks
+            "AAAAAAAAAAAAAAAA" * 2,              # Same characters
+            "1234567890123456" * 2,              # Repeated numbers
+        ]
+        
+        print("ECB MODE PATTERN VULNERABILITY")
+        print("=" * 50)
+        
+        for plaintext in test_cases:
+            # TODO: Encrypt the plaintext
+            # TODO: Split ciphertext into 16-byte blocks
+            # TODO: Display each block in hexadecimal
+            # TODO: Identify and highlight identical blocks
+            # TODO: Explain the security implication
+            pass
+    
+    def compare_with_cbc(self, plaintext):
+        """
+        Compare ECB with CBC mode encryption.
+        
+        Args:
+            plaintext: Test data to encrypt
+        """
+        # TODO: Encrypt same plaintext with ECB
+        # TODO: Encrypt same plaintext with CBC (use random IV)
+        # TODO: Display both ciphertexts
+        # TODO: Show that CBC produces different output each time
+        # TODO: Explain why CBC is more secure
+        pass
+
+def main():
+    key = b'MySecretKey12345'  # 16 bytes
+    demo = ECBVulnerabilityDemo(key)
+    
+    # TODO: Run pattern weakness demonstration
+    # TODO: Run ECB vs CBC comparison
+    # TODO: Print security recommendations
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3: Run ECB Demonstration
+cd ~/crypto-lab/scripts
+chmod +x ecb_demo.py
+python3 ecb_demo.py > ../results/ecb_demo_results.txt
+cat ../results/ecb_demo_results.txt
+Step 4: Analyze Block Patterns
+Key observations to document:
+
+Identical plaintext blocks produce identical ciphertext blocks
+Patterns in data remain visible in encrypted form
+Attackers can infer information from repeated blocks
+No randomization between encryption operations
+Task 3: Automate Cryptographic Analysis
+Step 1: Create Automated Analyzer
+Create scripts/automated_analyzer.py:
+
+#!/usr/bin/env python3
+import os
+import re
+import json
+from datetime import datetime
+
+class CryptoVulnerabilityAnalyzer:
+    def __init__(self, apk_path):
+        """
+        Initialize analyzer with APK file path.
+        
+        Args:
+            apk_path: Path to APK file to analyze
+        """
+        self.apk_path = apk_path
+        self.results = {
+            'timestamp': datetime.now().isoformat(),
+            'vulnerabilities': [],
+            'risk_score': 0
+        }
+    
+    def extract_apk(self):
+        """
+        Extract APK using apktool.
+        
+        Returns:
+            Boolean indicating success
+        """
+        # TODO: Run apktool to extract APK
+        # TODO: Store extraction directory path
+        # TODO: Return True if successful
+        pass
+    
+    def scan_vulnerabilities(self):
+        """
+        Scan extracted files for crypto vulnerabilities.
+        
+        Returns:
+            List of vulnerability findings
+        """
+        vulnerability_patterns = {
+            'ecb_mode': {
+                'pattern': r'AES/ECB',
+                'severity': 'CRITICAL',
+                'cwe': 'CWE-327'
+            },
+            'hardcoded_keys': {
+                'pattern': r'["\']([A-Za-z0-9+/]{16,})["\']',
+                'severity': 'HIGH',
+                'cwe': 'CWE-798'
+            },
+            'weak_cipher': {
+                'pattern': r'DES|RC4|MD5',
+                'severity': 'HIGH',
+                'cwe': 'CWE-327'
+            }
+        }
+        
+        # TODO: Walk through extracted directory
+        # TODO: Search for each vulnerability pattern
+        # TODO: Record file path, line numbers, and matches
+        # TODO: Store findings in self.results
+        # TODO: Return vulnerability list
+        pass
+    
+    def calculate_risk_score(self):
+        """
+        Calculate overall risk score (0-100).
+        
+        Returns:
+            Integer risk score
+        """
+        severity_weights = {
+            'CRITICAL': 10,
+            'HIGH': 7,
+            'MEDIUM': 4,
+            'LOW': 1
+        }
+        
+        # TODO: Sum weighted scores for all vulnerabilities
+        # TODO: Normalize to 0-100 scale
+        # TODO: Store in self.results['risk_score']
+        # TODO: Return calculated score
+        pass
+    
+    def generate_recommendations(self):
+        """
+        Generate security recommendations based on findings.
+        
+        Returns:
+            List of recommendation dictionaries
+        """
+        recommendations = []
+        
+        # TODO: Check for ECB mode usage
+        # TODO: Add recommendation to use CBC/GCM/CTR
+        # TODO: Check for hardcoded keys
+        # TODO: Add recommendation for Android Keystore
+        # TODO: Check for weak algorithms
+        # TODO: Add recommendation to upgrade to AES-256
+        # TODO: Return recommendations list
+        
+        return recommendations
+    
+    def generate_report(self):
+        """
+        Generate comprehensive security report.
+        
+        Returns:
+            Formatted report string
+        """
+        # TODO: Create report header with APK name and date
+        # TODO: Display risk score
+        # TODO: List vulnerabilities by severity
+        # TODO: Show detailed findings with file paths
+        # TODO: Include recommendations section
+        # TODO: Return formatted report
+        pass
+    
+    def save_results(self, output_file):
+        """
+        Save analysis results to JSON file.
+        
+        Args:
+            output_file: Path to output JSON file
+        """
+        # TODO: Write self.results to JSON file
+        pass
+
+def main():
+    import sys
+    
+    if len(sys.argv) != 2:
+        print("Usage: python3 automated_analyzer.py <apk_file>")
+        sys.exit(1)
+    
+    analyzer = CryptoVulnerabilityAnalyzer(sys.argv[1])
+    
+    # TODO: Extract APK
+    # TODO: Scan for vulnerabilities
+    # TODO: Calculate risk score
+    # TODO: Generate recommendations
+    # TODO: Print report
+    # TODO: Save results to JSON
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2: Run Automated Analysis
+cd ~/crypto-lab/scripts
+chmod +x automated_analyzer.py
+python3 automated_analyzer.py ../apk-files/sample-vulnerable-app.apk
+Step 3: Review JSON Output
+cat ~/crypto-lab/apk-files/sample-vulnerable-app.apk_analysis.json
+Step 4: Create Summary Report
+Create a summary document with:
+
+Total vulnerabilities found
+Risk score interpretation
+Priority recommendations
+Remediation timeline
+Expected Outcomes
+After completing this lab, you should have:
+
+Identified vulnerabilities in the sample APK including:
+
+AES-ECB mode usage
+Hardcoded encryption keys
+Weak cryptographic algorithms
+Demonstrated ECB weaknesses showing:
+
+Pattern preservation in encrypted data
+Identical blocks producing identical ciphertext
+Comparison with secure CBC mode
+Created automation tools that:
+
+Extract and scan APK files
+Detect cryptographic vulnerabilities
+Calculate risk scores
+Generate actionable reports
+Documentation including:
+
+Vulnerability scan results
+ECB pattern analysis
+Security recommendations
+JSON-formatted findings
+Troubleshooting Tips
+Issue: apktool extraction fails
+
+Ensure apktool is installed: sudo apt install apktool
+Check APK file is not corrupted
+Verify sufficient disk space
+Issue: Python crypto library errors
+
+Install pycryptodome: pip3 install pycryptodome
+Do not mix pycrypto and pycryptodome
+Use Python 3.6 or higher
+Issue: Pattern scanner finds no results
+
+Verify correct directory path
+Check file extensions (.java, .smali, .xml)
+Ensure regex patterns are correct
+Test with known vulnerable code samples
+Conclusion
+This lab demonstrated critical vulnerabilities in cryptographic implementations, specifically AES in ECB mode. You learned to identify insecure patterns through static analysis, understand why ECB mode is dangerous through practical demonstrations, and automate vulnerability detection for efficient security assessments.
+
+Key takeaways:
+
+ECB mode reveals patterns and should never be used for sensitive data
+Hardcoded keys can be extracted from APK files
+Automated scanning improves security assessment efficiency
+Always use authenticated encryption modes (GCM) or CBC with proper IVs
+Implement Android Keystore for secure key management
+Secure alternatives to implement:
+
+AES-GCM (Galois/Counter Mode) - provides encryption and authentication
+AES-CBC with random IV - prevents pattern recognition
+Android Keystore System - secure key storage
+SecureRandom for cryptographic operations
+Continue practicing by analyzing real-world applications and contributing to mobile security research.

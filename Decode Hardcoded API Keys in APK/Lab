@@ -1,0 +1,716 @@
+Decode Hardcoded API Keys in APK
+Objectives
+By the end of this lab, students will be able to:
+
+Extract and decompile Android APK files using APKTool
+Navigate decompiled APK directory structures and identify key files
+Locate hardcoded API keys, tokens, and sensitive credentials in Android applications
+Analyze different code formats including Smali bytecode and XML resources
+Create automated Python scripts for API key detection and pattern matching
+Understand common security vulnerabilities related to hardcoded credentials in mobile applications
+Apply systematic approaches to mobile application security assessment
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Android application architecture
+Familiarity with Linux command-line operations
+Basic knowledge of Python programming
+Understanding of regular expressions (regex) concepts
+General awareness of API keys and authentication tokens
+Basic text processing and file manipulation skills
+Lab Environment
+Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Simply click Start Lab to access your pre-configured environment. No need to build your own virtual machine or install additional software - everything is ready to go.
+
+Your cloud machine includes:
+
+Ubuntu Linux with all necessary tools pre-installed
+APKTool for APK decompilation
+Python 3 with required libraries
+Text editors and file browsers
+Sample APK files for practice
+Task 1: Extract the APK's Resources Using APKTool
+Subtask 1.1: Prepare the Lab Environment
+First, let's set up our working directory and verify that all required tools are available.
+
+# Create a dedicated workspace for this lab
+mkdir -p ~/apk-analysis-lab
+cd ~/apk-analysis-lab
+
+# Verify APKTool installation
+apktool --version
+
+# Create subdirectories for organization
+mkdir -p extracted-apks
+mkdir -p scripts
+mkdir -p results
+Subtask 1.2: Download Sample APK File
+For this lab, we'll use a sample APK that contains hardcoded API keys. Let's download it to our workspace.
+
+# Download a sample APK file (replace with actual sample APK URL)
+wget -O sample-app.apk "https://github.com/OWASP/owasp-mstg/raw/master/Crackmes/Android/Level_01/UnCrackable-Level1.apk"
+
+# Verify the download
+ls -la sample-app.apk
+file sample-app.apk
+Subtask 1.3: Extract APK Using APKTool
+Now we'll use APKTool to decompile the APK and extract its resources.
+
+# Decompile the APK using APKTool
+apktool d sample-app.apk -o extracted-apks/sample-app
+
+# Navigate to the extracted directory
+cd extracted-apks/sample-app
+
+# Explore the directory structure
+ls -la
+Subtask 1.4: Understand the APK Structure
+Let's examine the typical structure of a decompiled APK to understand where sensitive information might be stored.
+
+# Display the directory tree structure
+tree -L 3
+
+# Examine key directories
+echo "=== APK Manifest ==="
+head -20 AndroidManifest.xml
+
+echo "=== Resources Directory ==="
+ls -la res/
+
+echo "=== Assets Directory ==="
+ls -la assets/ 2>/dev/null || echo "No assets directory found"
+
+echo "=== Smali Code Directory ==="
+ls -la smali/
+Task 2: Locate Hardcoded API Keys in the Decompiled Code
+Subtask 2.1: Search for Common API Key Patterns
+We'll systematically search through different file types for hardcoded credentials using various search patterns.
+
+# Return to the extracted APK directory
+cd ~/apk-analysis-lab/extracted-apks/sample-app
+
+# Search for common API key patterns in all files
+echo "=== Searching for API Keys ==="
+grep -r -i "api[_-]key" . --include="*.xml" --include="*.smali" --include="*.txt"
+
+echo "=== Searching for Access Tokens ==="
+grep -r -i "access[_-]token" . --include="*.xml" --include="*.smali" --include="*.txt"
+
+echo "=== Searching for Secret Keys ==="
+grep -r -i "secret[_-]key" . --include="*.xml" --include="*.smali" --include="*.txt"
+
+echo "=== Searching for Bearer Tokens ==="
+grep -r -i "bearer" . --include="*.xml" --include="*.smali" --include="*.txt"
+Subtask 2.2: Examine String Resources
+String resources often contain hardcoded values. Let's examine the strings.xml files.
+
+# Find all strings.xml files
+find . -name "strings.xml" -type f
+
+# Examine string resources for potential API keys
+echo "=== Analyzing String Resources ==="
+for strings_file in $(find . -name "strings.xml" -type f); do
+    echo "File: $strings_file"
+    cat "$strings_file" | grep -E "(key|token|secret|password|api)" -i
+    echo "---"
+done
+Subtask 2.3: Analyze Smali Code for Hardcoded Values
+Smali is the disassembled Dalvik bytecode. Let's search for string constants that might contain API keys.
+
+# Search for string constants in Smali files
+echo "=== Searching Smali Files for String Constants ==="
+find . -name "*.smali" -exec grep -l "const-string" {} \; | head -10
+
+# Look for specific patterns in Smali files
+echo "=== Searching for Base64 Encoded Strings ==="
+grep -r "const-string.*[A-Za-z0-9+/=]{20,}" . --include="*.smali" | head -5
+
+echo "=== Searching for Long Alphanumeric Strings ==="
+grep -r "const-string.*[A-Za-z0-9]{32,}" . --include="*.smali" | head -5
+Subtask 2.4: Check Configuration Files
+Configuration files often contain sensitive information. Let's examine various configuration file types.
+
+# Search for configuration files
+echo "=== Looking for Configuration Files ==="
+find . -name "*.properties" -o -name "*.config" -o -name "*.cfg" -o -name "*.ini"
+
+# Search for JSON files that might contain configuration
+find . -name "*.json" -type f
+
+# Examine any found configuration files
+for config_file in $(find . -name "*.properties" -o -name "*.config" -o -name "*.json" 2>/dev/null); do
+    if [ -f "$config_file" ]; then
+        echo "=== Configuration File: $config_file ==="
+        cat "$config_file"
+        echo "---"
+    fi
+done
+Task 3: Automate API Key Detection with Python
+Subtask 3.1: Create a Basic API Key Detection Script
+Let's create a Python script to automate the detection of potential API keys and sensitive information.
+
+# Navigate to the scripts directory
+cd ~/apk-analysis-lab/scripts
+
+# Create the API key detection script
+cat > api_key_detector.py << 'EOF'
+#!/usr/bin/env python3
+"""
+API Key Detection Script for Android APK Analysis
+This script searches for hardcoded API keys and sensitive information in decompiled APK files.
+"""
+
+import os
+import re
+import sys
+import json
+from pathlib import Path
+
+class APIKeyDetector:
+    def __init__(self, apk_path):
+        self.apk_path = Path(apk_path)
+        self.findings = []
+        
+        # Define patterns for different types of API keys and secrets
+        self.patterns = {
+            'generic_api_key': r'(?i)(api[_-]?key|apikey)\s*[:=]\s*["\']([a-zA-Z0-9_-]{20,})["\']',
+            'access_token': r'(?i)(access[_-]?token|accesstoken)\s*[:=]\s*["\']([a-zA-Z0-9_.-]{20,})["\']',
+            'secret_key': r'(?i)(secret[_-]?key|secretkey)\s*[:=]\s*["\']([a-zA-Z0-9_-]{20,})["\']',
+            'bearer_token': r'(?i)bearer\s+([a-zA-Z0-9_.-]{20,})',
+            'aws_access_key': r'AKIA[0-9A-Z]{16}',
+            'aws_secret_key': r'(?i)aws[_-]?secret[_-]?access[_-]?key["\']?\s*[:=]\s*["\']([a-zA-Z0-9/+=]{40})["\']',
+            'google_api_key': r'AIza[0-9A-Za-z_-]{35}',
+            'firebase_key': r'(?i)firebase[_-]?key["\']?\s*[:=]\s*["\']([a-zA-Z0-9_-]{20,})["\']',
+            'base64_encoded': r'[A-Za-z0-9+/]{40,}={0,2}',
+            'long_hex_string': r'[a-fA-F0-9]{32,}',
+            'jwt_token': r'eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*'
+        }
+    
+    def scan_file(self, file_path):
+        """Scan a single file for API keys and secrets"""
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                
+            for pattern_name, pattern in self.patterns.items():
+                matches = re.finditer(pattern, content)
+                for match in matches:
+                    finding = {
+                        'file': str(file_path.relative_to(self.apk_path)),
+                        'pattern': pattern_name,
+                        'match': match.group(0),
+                        'line_number': content[:match.start()].count('\n') + 1
+                    }
+                    self.findings.append(finding)
+                    
+        except Exception as e:
+            print(f"Error scanning {file_path}: {e}")
+    
+    def scan_directory(self):
+        """Recursively scan all files in the APK directory"""
+        file_extensions = ['.xml', '.smali', '.txt', '.properties', '.json', '.js', '.java']
+        
+        for file_path in self.apk_path.rglob('*'):
+            if file_path.is_file() and file_path.suffix.lower() in file_extensions:
+                self.scan_file(file_path)
+    
+    def generate_report(self):
+        """Generate a detailed report of findings"""
+        if not self.findings:
+            print("No potential API keys or secrets found.")
+            return
+        
+        print(f"\n=== API Key Detection Report ===")
+        print(f"Scanned APK: {self.apk_path}")
+        print(f"Total findings: {len(self.findings)}\n")
+        
+        # Group findings by pattern type
+        by_pattern = {}
+        for finding in self.findings:
+            pattern = finding['pattern']
+            if pattern not in by_pattern:
+                by_pattern[pattern] = []
+            by_pattern[pattern].append(finding)
+        
+        for pattern_name, findings in by_pattern.items():
+            print(f"--- {pattern_name.upper().replace('_', ' ')} ({len(findings)} found) ---")
+            for finding in findings[:5]:  # Show first 5 matches per pattern
+                print(f"  File: {finding['file']}")
+                print(f"  Line: {finding['line_number']}")
+                print(f"  Match: {finding['match'][:100]}...")
+                print()
+            
+            if len(findings) > 5:
+                print(f"  ... and {len(findings) - 5} more matches\n")
+    
+    def save_report(self, output_file):
+        """Save findings to a JSON file"""
+        with open(output_file, 'w') as f:
+            json.dump(self.findings, f, indent=2)
+        print(f"Detailed report saved to: {output_file}")
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 api_key_detector.py <path_to_extracted_apk>")
+        sys.exit(1)
+    
+    apk_path = sys.argv[1]
+    if not os.path.exists(apk_path):
+        print(f"Error: Path {apk_path} does not exist")
+        sys.exit(1)
+    
+    detector = APIKeyDetector(apk_path)
+    print("Scanning for API keys and secrets...")
+    detector.scan_directory()
+    detector.generate_report()
+    
+    # Save detailed report
+    output_file = f"../results/api_key_report_{Path(apk_path).name}.json"
+    detector.save_report(output_file)
+
+if __name__ == "__main__":
+    main()
+EOF
+
+# Make the script executable
+chmod +x api_key_detector.py
+Subtask 3.2: Run the API Key Detection Script
+Now let's execute our automated detection script on the extracted APK.
+
+# Run the API key detection script
+python3 api_key_detector.py ../extracted-apks/sample-app
+
+# Check if a report was generated
+ls -la ../results/
+Subtask 3.3: Create an Enhanced Detection Script
+Let's create a more sophisticated script that includes additional features like entropy analysis and context detection.
+
+# Create an enhanced detection script
+cat > enhanced_api_detector.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Enhanced API Key Detection Script with Entropy Analysis
+"""
+
+import os
+import re
+import sys
+import json
+import math
+from pathlib import Path
+from collections import Counter
+
+class EnhancedAPIKeyDetector:
+    def __init__(self, apk_path):
+        self.apk_path = Path(apk_path)
+        self.findings = []
+        self.high_entropy_strings = []
+        
+        # Enhanced patterns with more specific matching
+        self.patterns = {
+            'google_api_key': r'AIza[0-9A-Za-z_-]{35}',
+            'firebase_key': r'(?i)(firebase[_-]?key|firebase[_-]?token)["\']?\s*[:=]\s*["\']([a-zA-Z0-9_-]{20,})["\']',
+            'aws_access_key': r'AKIA[0-9A-Z]{16}',
+            'github_token': r'gh[pousr]_[A-Za-z0-9_]{36}',
+            'slack_token': r'xox[baprs]-[0-9a-zA-Z-]{10,48}',
+            'stripe_key': r'sk_live_[0-9a-zA-Z]{24}',
+            'generic_secret': r'(?i)(secret|password|pwd|pass)["\']?\s*[:=]\s*["\']([a-zA-Z0-9!@#$%^&*()_+-=]{8,})["\']',
+            'base64_pattern': r'[A-Za-z0-9+/]{40,}={0,2}',
+            'hex_pattern': r'[a-fA-F0-9]{32,64}',
+            'jwt_token': r'eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*'
+        }
+    
+    def calculate_entropy(self, string):
+        """Calculate Shannon entropy of a string"""
+        if len(string) == 0:
+            return 0
+        
+        entropy = 0
+        for count in Counter(string).values():
+            probability = count / len(string)
+            entropy -= probability * math.log2(probability)
+        
+        return entropy
+    
+    def is_high_entropy(self, string, threshold=4.5):
+        """Check if string has high entropy (likely random/encoded)"""
+        return self.calculate_entropy(string) > threshold and len(string) > 15
+    
+    def extract_context(self, content, match_start, match_end, context_size=50):
+        """Extract context around a match"""
+        start = max(0, match_start - context_size)
+        end = min(len(content), match_end + context_size)
+        return content[start:end]
+    
+    def scan_file_enhanced(self, file_path):
+        """Enhanced file scanning with entropy analysis"""
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            
+            # Pattern-based detection
+            for pattern_name, pattern in self.patterns.items():
+                matches = re.finditer(pattern, content)
+                for match in matches:
+                    context = self.extract_context(content, match.start(), match.end())
+                    
+                    finding = {
+                        'file': str(file_path.relative_to(self.apk_path)),
+                        'pattern': pattern_name,
+                        'match': match.group(0),
+                        'line_number': content[:match.start()].count('\n') + 1,
+                        'context': context,
+                        'entropy': self.calculate_entropy(match.group(0)),
+                        'confidence': self.assess_confidence(pattern_name, match.group(0), context)
+                    }
+                    self.findings.append(finding)
+            
+            # High entropy string detection
+            string_pattern = r'["\']([a-zA-Z0-9+/=_-]{20,})["\']'
+            for match in re.finditer(string_pattern, content):
+                string_value = match.group(1)
+                if self.is_high_entropy(string_value):
+                    context = self.extract_context(content, match.start(), match.end())
+                    
+                    entropy_finding = {
+                        'file': str(file_path.relative_to(self.apk_path)),
+                        'pattern': 'high_entropy_string',
+                        'match': string_value,
+                        'line_number': content[:match.start()].count('\n') + 1,
+                        'context': context,
+                        'entropy': self.calculate_entropy(string_value),
+                        'confidence': 'medium'
+                    }
+                    self.high_entropy_strings.append(entropy_finding)
+                    
+        except Exception as e:
+            print(f"Error scanning {file_path}: {e}")
+    
+    def assess_confidence(self, pattern_name, match, context):
+        """Assess confidence level of the finding"""
+        high_confidence_patterns = ['google_api_key', 'aws_access_key', 'github_token']
+        
+        if pattern_name in high_confidence_patterns:
+            return 'high'
+        
+        # Check context for suspicious keywords
+        suspicious_keywords = ['test', 'example', 'demo', 'placeholder', 'dummy']
+        context_lower = context.lower()
+        
+        if any(keyword in context_lower for keyword in suspicious_keywords):
+            return 'low'
+        
+        return 'medium'
+    
+    def scan_directory(self):
+        """Scan all relevant files in the directory"""
+        file_extensions = ['.xml', '.smali', '.txt', '.properties', '.json', '.js', '.java', '.kt']
+        
+        for file_path in self.apk_path.rglob('*'):
+            if file_path.is_file() and file_path.suffix.lower() in file_extensions:
+                self.scan_file_enhanced(file_path)
+    
+    def generate_enhanced_report(self):
+        """Generate comprehensive report"""
+        print(f"\n=== Enhanced API Key Detection Report ===")
+        print(f"Scanned APK: {self.apk_path}")
+        print(f"Pattern-based findings: {len(self.findings)}")
+        print(f"High entropy strings: {len(self.high_entropy_strings)}")
+        
+        # High confidence findings
+        high_conf = [f for f in self.findings if f['confidence'] == 'high']
+        if high_conf:
+            print(f"\n--- HIGH CONFIDENCE FINDINGS ({len(high_conf)}) ---")
+            for finding in high_conf:
+                print(f"  Pattern: {finding['pattern']}")
+                print(f"  File: {finding['file']}:{finding['line_number']}")
+                print(f"  Match: {finding['match']}")
+                print(f"  Entropy: {finding['entropy']:.2f}")
+                print(f"  Context: ...{finding['context']}...")
+                print()
+        
+        # Medium confidence findings
+        med_conf = [f for f in self.findings if f['confidence'] == 'medium']
+        if med_conf:
+            print(f"\n--- MEDIUM CONFIDENCE FINDINGS ({len(med_conf)}) ---")
+            for finding in med_conf[:3]:  # Show first 3
+                print(f"  Pattern: {finding['pattern']}")
+                print(f"  File: {finding['file']}:{finding['line_number']}")
+                print(f"  Match: {finding['match'][:50]}...")
+                print()
+        
+        # High entropy strings
+        if self.high_entropy_strings:
+            print(f"\n--- HIGH ENTROPY STRINGS (Top 5) ---")
+            sorted_entropy = sorted(self.high_entropy_strings, 
+                                  key=lambda x: x['entropy'], reverse=True)
+            for finding in sorted_entropy[:5]:
+                print(f"  File: {finding['file']}:{finding['line_number']}")
+                print(f"  String: {finding['match'][:50]}...")
+                print(f"  Entropy: {finding['entropy']:.2f}")
+                print()
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 enhanced_api_detector.py <path_to_extracted_apk>")
+        sys.exit(1)
+    
+    apk_path = sys.argv[1]
+    detector = EnhancedAPIKeyDetector(apk_path)
+    
+    print("Running enhanced API key detection...")
+    detector.scan_directory()
+    detector.generate_enhanced_report()
+    
+    # Save results
+    all_findings = {
+        'pattern_findings': detector.findings,
+        'entropy_findings': detector.high_entropy_strings
+    }
+    
+    output_file = f"../results/enhanced_report_{Path(apk_path).name}.json"
+    with open(output_file, 'w') as f:
+        json.dump(all_findings, f, indent=2)
+    
+    print(f"\nDetailed report saved to: {output_file}")
+
+if __name__ == "__main__":
+    main()
+EOF
+
+# Make the enhanced script executable
+chmod +x enhanced_api_detector.py
+Subtask 3.4: Execute the Enhanced Detection Script
+Let's run our enhanced detection script to get more comprehensive results.
+
+# Run the enhanced detection script
+python3 enhanced_api_detector.py ../extracted-apks/sample-app
+
+# Compare the results from both scripts
+echo "=== Comparing Results ==="
+ls -la ../results/
+
+# View the enhanced report
+if [ -f "../results/enhanced_report_sample-app.json" ]; then
+    echo "=== Enhanced Report Summary ==="
+    python3 -c "
+import json
+with open('../results/enhanced_report_sample-app.json', 'r') as f:
+    data = json.load(f)
+print(f'Pattern findings: {len(data[\"pattern_findings\"])}')
+print(f'Entropy findings: {len(data[\"entropy_findings\"])}')
+"
+fi
+Subtask 3.5: Create a Summary Report Generator
+Let's create a final script that generates a human-readable summary report.
+
+# Create a report generator script
+cat > generate_summary.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Summary Report Generator for API Key Detection Results
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+
+def generate_summary_report(json_file):
+    """Generate a human-readable summary report"""
+    
+    with open(json_file, 'r') as f:
+        data = json.load(f)
+    
+    pattern_findings = data.get('pattern_findings', [])
+    entropy_findings = data.get('entropy_findings', [])
+    
+    print("=" * 60)
+    print("API KEY DETECTION SUMMARY REPORT")
+    print("=" * 60)
+    print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Report file: {json_file}")
+    print()
+    
+    # Executive Summary
+    print("EXECUTIVE SUMMARY")
+    print("-" * 20)
+    total_findings = len(pattern_findings) + len(entropy_findings)
+    high_risk = len([f for f in pattern_findings if f.get('confidence') == 'high'])
+    medium_risk = len([f for f in pattern_findings if f.get('confidence') == 'medium'])
+    
+    print(f"Total potential secrets found: {total_findings}")
+    print(f"High risk findings: {high_risk}")
+    print(f"Medium risk findings: {medium_risk}")
+    print(f"High entropy strings: {len(entropy_findings)}")
+    print()
+    
+    # Risk Assessment
+    if high_risk > 0:
+        risk_level = "HIGH"
+    elif medium_risk > 5:
+        risk_level = "MEDIUM"
+    elif total_findings > 0:
+        risk_level = "LOW"
+    else:
+        risk_level = "MINIMAL"
+    
+    print(f"OVERALL RISK LEVEL: {risk_level}")
+    print()
+    
+    # Detailed Findings
+    if pattern_findings:
+        print("DETAILED FINDINGS")
+        print("-" * 20)
+        
+        # Group by pattern type
+        by_pattern = {}
+        for finding in pattern_findings:
+            pattern = finding['pattern']
+            if pattern not in by_pattern:
+                by_pattern[pattern] = []
+            by_pattern[pattern].append(finding)
+        
+        for pattern, findings in by_pattern.items():
+            print(f"\n{pattern.upper().replace('_', ' ')} ({len(findings)} found)")
+            print("  " + "-" * 40)
+            
+            for i, finding in enumerate(findings[:3], 1):  # Show top 3
+                print(f"  {i}. File: {finding['file']}")
+                print(f"     Line: {finding['line_number']}")
+                print(f"     Confidence: {finding.get('confidence', 'unknown')}")
+                if len(finding['match']) > 50:
+                    print(f"     Value: {finding['match'][:50]}...")
+                else:
+                    print(f"     Value: {finding['match']}")
+                print()
+            
+            if len(findings) > 3:
+                print(f"     ... and {len(findings) - 3} more")
+    
+    # Recommendations
+    print("\nRECOMMENDATIONS")
+    print("-" * 20)
+    
+    if high_risk > 0:
+        print("1. IMMEDIATE ACTION REQUIRED:")
+        print("   - Review all high-confidence findings immediately")
+        print("   - Rotate any confirmed API keys or secrets")
+        print("   - Implement proper secret management")
+    
+    if medium_risk > 0:
+        print("2. REVIEW MEDIUM RISK FINDINGS:")
+        print("   - Manually verify medium-confidence findings")
+        print("   - Remove any confirmed hardcoded secrets")
+    
+    if len(entropy_findings) > 0:
+        print("3. INVESTIGATE HIGH ENTROPY STRINGS:")
+        print("   - Review strings with high randomness")
+        print("   - These may be encoded secrets or tokens")
+    
+    print("4. GENERAL SECURITY IMPROVEMENTS:")
+    print("   - Use Android Keystore for sensitive data")
+    print("   - Implement runtime secret retrieval")
+    print("   - Use environment variables or secure configuration")
+    print("   - Regular security code reviews")
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 generate_summary.py <json_report_file>")
+        sys.exit(1)
+    
+    json_file = sys.argv[1]
+    if not Path(json_file).exists():
+        print(f"Error: File {json_file} not found")
+        sys.exit(1)
+    
+    generate_summary_report(json_file)
+
+if __name__ == "__main__":
+    main()
+EOF
+
+# Make the script executable
+chmod +x generate_summary.py
+
+# Generate summary report
+if [ -f "../results/enhanced_report_sample-app.json" ]; then
+    python3 generate_summary.py ../results/enhanced_report_sample-app.json
+fi
+Verification and Testing
+Let's verify that our lab has been completed successfully by running through a final verification process.
+
+# Return to the main lab directory
+cd ~/apk-analysis-lab
+
+# Verify all components are in place
+echo "=== Lab Verification ==="
+echo "1. Checking extracted APK..."
+ls -la extracted-apks/sample-app/
+
+echo "2. Checking scripts..."
+ls -la scripts/
+
+echo "3. Checking results..."
+ls -la results/
+
+echo "4. Testing script functionality..."
+cd scripts
+python3 -c "
+import sys
+sys.path.append('.')
+print('Python scripts are functional')
+"
+
+# Create a final lab summary
+echo "=== Lab Completion Summary ===" > ../results/lab_summary.txt
+echo "Date: $(date)" >> ../results/lab_summary.txt
+echo "APK analyzed: sample-app.apk" >> ../results/lab_summary.txt
+echo "Scripts created: 3" >> ../results/lab_summary.txt
+echo "Reports generated: $(ls ../results/*.json 2>/dev/null | wc -l)" >> ../results/lab_summary.txt
+
+cat ../results/lab_summary.txt
+Troubleshooting Common Issues
+Issue 1: APKTool Not Found
+If you encounter "apktool: command not found":
+
+# Install APKTool manually
+sudo apt update
+sudo apt install apktool -y
+Issue 2: Permission Denied Errors
+If you get permission errors:
+
+# Fix permissions for scripts
+chmod +x scripts/*.py
+chmod -R 755 ~/apk-analysis-lab
+Issue 3: Python Module Import Errors
+If Python modules are missing:
+
+# Install required Python modules
+pip3 install pathlib
+# Note: Most modules used are part of Python standard library
+Issue 4: No Findings in Sample APK
+If the sample APK doesn't contain obvious API keys:
+
+# Create a test file with sample API keys for demonstration
+cat > extracted-apks/sample-app/test_secrets.xml << 'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_api_key">AIzaSyDemoKey1234567890abcdefghijklmnop</string>
+    <string name="aws_access_key">AKIAIOSFODNN7EXAMPLE</string>
+    <string name="secret_token">sk_live_abcdef1234567890abcdef12</string>
+</resources>
+EOF
+
+# Re-run the detection scripts
+cd scripts
+python3 enhanced_api_detector.py ../extracted-apks/sample-app
+Conclusion
+In this comprehensive lab, you have successfully learned how to:
+
+Extract and Analyze APK Files: You used APKTool to decompile Android applications and explored their internal structure, including resources, manifest files, and Smali bytecode.
+
+Manual Secret Detection: You performed systematic searches for hardcoded API keys, tokens, and sensitive credentials using command-line tools and pattern matching techniques.
+
+Automated Detection Development: You created sophisticated Python scripts that can automatically scan APK files for various types of secrets, including pattern-based detection and entropy analysis for identifying potentially encoded or random strings.
+
+Risk Assessment: You learned to categorize
